@@ -1,6 +1,7 @@
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
+import WeatherCard from './WeatherCard'
 
 export default function DashboardPage() {
   return (
@@ -25,8 +26,16 @@ export default function DashboardPage() {
             <StatCard title="Alerts" value="0 active" icon="🔔" color="#dc2626" />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+              gap: '16px',
+              marginBottom: '24px',
+            }}
+          >
             <MapView />
+            <WeatherCard />
           </div>
 
           <div
@@ -44,7 +53,6 @@ export default function DashboardPage() {
               We're building this dashboard step by step. Soon you'll see:
             </p>
             <ul style={{ color: '#475569', lineHeight: 1.9, marginTop: '8px' }}>
-              <li>☀️ Live weather and 7-day forecast for your location</li>
               <li>📊 Charts showing rainfall and yield trends</li>
               <li>🤖 Random Forest predictions of your crop yield</li>
               <li>🔔 Weather alerts and notifications</li>
