@@ -1,4 +1,41 @@
+'use client'
+
+import { useState } from 'react'
+
 export default function Home() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+
+      if (res.ok) {
+        setMessage('✅ Logged in! Redirecting...')
+        setTimeout(() => {
+          window.location.href = '/dashboard'
+        }, 1000)
+      } else {
+        setMessage('❌ ' + (data.error || 'Login failed'))
+      }
+    } catch (err) {
+      setMessage('❌ Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div
       style={{
@@ -48,7 +85,7 @@ export default function Home() {
           Sign in to your dashboard
         </p>
 
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label
               style={{
@@ -62,8 +99,11 @@ export default function Home() {
               Email or Username
             </label>
             <input
-              type="text"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
+              required
               style={{
                 width: '100%',
                 height: '50px',
@@ -93,7 +133,10 @@ export default function Home() {
             </label>
             <input
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              required
               style={{
                 width: '100%',
                 height: '50px',
@@ -128,22 +171,36 @@ export default function Home() {
 
           <button
             type="submit"
+            disabled={loading}
             style={{
               height: '50px',
-              background: '#16803c',
+              background: loading ? '#94a3b8' : '#16803c',
               color: 'white',
               border: 'none',
               borderRadius: '12px',
               fontSize: '16px',
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 12px rgba(22,128,60,0.25)',
               marginTop: '4px',
             }}
           >
-            Sign In
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        {message && (
+          <p
+            style={{
+              textAlign: 'center',
+              marginTop: '16px',
+              fontSize: '14px',
+              color: message.startsWith('✅') ? '#16803c' : '#dc2626',
+            }}
+          >
+            {message}
+          </p>
+        )}
 
         <p style={{ textAlign: 'center', marginTop: '24px', color: '#64748b', fontSize: '14px' }}>
           New here?{' '}
