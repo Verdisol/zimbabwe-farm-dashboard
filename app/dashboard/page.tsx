@@ -2,6 +2,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
+import ChartSection from './ChartSection'
 
 export default function DashboardPage() {
   return (
@@ -38,6 +39,10 @@ export default function DashboardPage() {
             <WeatherCard />
           </div>
 
+          <div style={{ marginBottom: '24px' }}>
+            <ChartSection />
+          </div>
+
           <div
             style={{
               background: 'white',
@@ -50,10 +55,9 @@ export default function DashboardPage() {
               Getting started
             </h2>
             <p style={{ color: '#64748b', lineHeight: 1.7 }}>
-              We're building this dashboard step by step. Soon you'll see:
+              More features coming soon:
             </p>
             <ul style={{ color: '#475569', lineHeight: 1.9, marginTop: '8px' }}>
-              <li>📊 Charts showing rainfall and yield trends</li>
               <li>🤖 Random Forest predictions of your crop yield</li>
               <li>🔔 Weather alerts and notifications</li>
               <li>📚 "Did You Know" crop education and pest help</li>
