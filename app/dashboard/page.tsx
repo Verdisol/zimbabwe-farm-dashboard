@@ -1,5 +1,6 @@
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import MapView from './MapView'
 
 export default function DashboardPage() {
   return (
@@ -24,6 +25,10 @@ export default function DashboardPage() {
             <StatCard title="Alerts" value="0 active" icon="🔔" color="#dc2626" />
           </div>
 
+          <div style={{ marginBottom: '24px' }}>
+            <MapView />
+          </div>
+
           <div
             style={{
               background: 'white',
@@ -39,7 +44,6 @@ export default function DashboardPage() {
               We're building this dashboard step by step. Soon you'll see:
             </p>
             <ul style={{ color: '#475569', lineHeight: 1.9, marginTop: '8px' }}>
-              <li>🗺️ Interactive map of your district with OSM base layer</li>
               <li>☀️ Live weather and 7-day forecast for your location</li>
               <li>📊 Charts showing rainfall and yield trends</li>
               <li>🤖 Random Forest predictions of your crop yield</li>
