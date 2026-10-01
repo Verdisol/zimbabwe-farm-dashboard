@@ -1,89 +1,153 @@
 export default function Home() {
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
       style={{
-        backgroundImage: 'url(/images/farmer.jpg)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(/images/farmer.jpg)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        padding: '16px',
       }}
     >
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'relative',
-          backgroundColor: 'white',
-          padding: '40px',
-          borderRadius: '24px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          background: 'rgba(255,255,255,0.96)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.7)',
+          borderRadius: '20px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
           width: '100%',
           maxWidth: '420px',
-          margin: '20px',
+          padding: '40px 32px',
         }}
       >
         <h1
           style={{
             fontSize: '28px',
-            fontWeight: 'bold',
-            color: '#2E7D32',
+            fontWeight: 700,
+            color: '#1f2937',
             textAlign: 'center',
-            marginBottom: '8px',
+            margin: '0 0 8px 0',
           }}
         >
-          🌾 Zimbabwe Farm Dashboard
+          Welcome Back
         </h1>
-        <p style={{ textAlign: 'center', color: '#666', marginBottom: '32px' }}>
-          Welcome back, farmer!
+        <p
+          style={{
+            fontSize: '14px',
+            color: '#64748b',
+            textAlign: 'center',
+            margin: '0 0 28px 0',
+          }}
+        >
+          Sign in to your dashboard
         </p>
 
         <form style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <input
-            type="email"
-            placeholder="Email"
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#1f2937',
+                marginBottom: '6px',
+              }}
+            >
+              Email or Username
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your email"
+              style={{
+                width: '100%',
+                height: '50px',
+                padding: '0 14px',
+                background: 'rgba(255,255,255,0.96)',
+                border: '1px solid #d1d5db',
+                borderRadius: '12px',
+                fontSize: '15px',
+                color: '#1f2937',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#1f2937',
+                marginBottom: '6px',
+              }}
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              style={{
+                width: '100%',
+                height: '50px',
+                padding: '0 14px',
+                background: 'rgba(255,255,255,0.96)',
+                border: '1px solid #d1d5db',
+                borderRadius: '12px',
+                fontSize: '15px',
+                color: '#1f2937',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div
             style={{
-              padding: '14px',
-              borderRadius: '12px',
-              border: '1px solid #ddd',
-              fontSize: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '14px',
             }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            style={{
-              padding: '14px',
-              borderRadius: '12px',
-              border: '1px solid #ddd',
-              fontSize: '16px',
-            }}
-          />
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1f2937' }}>
+              <input type="checkbox" />
+              Remember me
+            </label>
+            <a href="/forgot" style={{ color: '#16803c', textDecoration: 'none', fontWeight: 500 }}>
+              Forgot password?
+            </a>
+          </div>
+
           <button
             type="submit"
             style={{
-              backgroundColor: '#4CAF50',
+              height: '50px',
+              background: '#16803c',
               color: 'white',
-              padding: '14px',
-              borderRadius: '12px',
               border: 'none',
+              borderRadius: '12px',
               fontSize: '16px',
-              fontWeight: 'bold',
+              fontWeight: 600,
               cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(22,128,60,0.25)',
+              marginTop: '4px',
             }}
           >
-            Log In
+            Sign In
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', color: '#666' }}>
+        <p style={{ textAlign: 'center', marginTop: '24px', color: '#64748b', fontSize: '14px' }}>
           New here?{' '}
-          <a href="/register" style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+          <a href="/register" style={{ color: '#16803c', fontWeight: 600, textDecoration: 'none' }}>
             Create an account
           </a>
         </p>
