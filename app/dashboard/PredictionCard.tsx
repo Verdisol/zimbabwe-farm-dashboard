@@ -40,11 +40,20 @@ export default function PredictionCard() {
           predicted_yield_t_ha: data.predicted_yield_t_ha,
           confidence_range: data.confidence_range,
         })
+        // Save to localStorage so the top stat card can show it
+        localStorage.setItem(
+          'latestPrediction',
+          data.predicted_yield_t_ha.toString()
+        )
+        // Dispatch event so StatCards updates immediately
+        window.dispatchEvent(new Event('predictionUpdated'))
       } else {
         setError(data.error || 'Prediction failed')
       }
     } catch (err) {
-      setError('Could not reach prediction API. Try again in 30 seconds (the API sleeps when idle).')
+      setError(
+        'Could not reach prediction API. Try again in 30 seconds (the API sleeps when idle).'
+      )
     } finally {
       setLoading(false)
     }
@@ -60,6 +69,7 @@ export default function PredictionCard() {
     color: '#1f2937',
     outline: 'none',
     boxSizing: 'border-box' as const,
+    background: 'rgba(255,255,255,0.92)',
   }
 
   const labelStyle = {
@@ -73,22 +83,38 @@ export default function PredictionCard() {
   return (
     <div
       style={{
-        background: 'white',
+        background: 'rgba(255,255,255,0.20)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        border: '1px solid rgba(0,255,136,0.20)',
+        boxShadow: '0 0 15px rgba(0,255,136,0.18)',
         overflow: 'hidden',
       }}
     >
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', margin: 0 }}>
+      <div
+        style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.3)',
+        }}
+      >
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
           🤖 Maize Yield Prediction
         </h2>
-        <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>
+        <p style={{ fontSize: '12px', color: '#334155', margin: '2px 0 0 0' }}>
           Random Forest model — powered by your Python API
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          padding: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px',
+        }}
+      >
         <div>
           <label style={labelStyle}>Growing-season rainfall (mm)</label>
           <input
@@ -141,7 +167,7 @@ export default function PredictionCard() {
             fontSize: '15px',
             fontWeight: 600,
             cursor: loading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 4px 12px rgba(22,128,60,0.25)',
+            boxShadow: '0 0 15px rgba(0,255,136,0.35)',
           }}
         >
           {loading ? 'Predicting...' : 'Predict Yield'}
@@ -179,7 +205,8 @@ export default function PredictionCard() {
             {result.predicted_yield_t_ha.toFixed(2)} t/ha
           </div>
           <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '8px' }}>
-            Confidence range: {result.confidence_range.low.toFixed(2)} – {result.confidence_range.high.toFixed(2)} t/ha
+            Confidence range: {result.confidence_range.low.toFixed(2)} –{' '}
+            {result.confidence_range.high.toFixed(2)} t/ha
           </div>
         </div>
       )}
