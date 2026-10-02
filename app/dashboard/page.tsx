@@ -8,6 +8,17 @@ import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 
+const cardStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.20)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
+  borderRadius: '16px',
+  padding: '20px',
+  border: '1px solid rgba(0,255,136,0.20)',
+  boxShadow: '0 0 15px rgba(0,255,136,0.18)',
+  transition: 'all 0.3s ease',
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
 
@@ -17,7 +28,7 @@ export default function DashboardPage() {
         display: 'flex',
         minHeight: '100vh',
         backgroundImage:
-          'linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url(/images/background.jpeg)',
+          'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url(/images/background.jpeg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -56,20 +67,27 @@ function StatCard({
   return (
     <div
       style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '20px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        ...cardStyle,
         borderLeft: `4px solid ${color}`,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
+        e.currentTarget.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
+        e.currentTarget.style.transform = 'translateY(0)'
       }}
     >
       <div style={{ fontSize: '24px', marginBottom: '8px' }}>{icon}</div>
-      <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>{title}</p>
+      <p style={{ fontSize: '13px', color: '#1f2937', margin: 0, fontWeight: 500 }}>
+        {title}
+      </p>
       <p
         style={{
           fontSize: '22px',
           fontWeight: 700,
-          color: '#1f2937',
+          color: '#0f172a',
           margin: '4px 0 0 0',
         }}
       >
@@ -82,12 +100,49 @@ function StatCard({
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1f2937', margin: 0 }}>
+      <h1
+        style={{
+          fontSize: '24px',
+          fontWeight: 700,
+          color: '#0f172a',
+          margin: 0,
+          textShadow: '0 1px 4px rgba(255,255,255,0.6)',
+        }}
+      >
         {title}
       </h1>
-      <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0 0' }}>
+      <p
+        style={{
+          fontSize: '14px',
+          color: '#334155',
+          margin: '4px 0 0 0',
+          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+        }}
+      >
         {subtitle}
       </p>
+    </div>
+  )
+}
+
+function GlowWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        borderRadius: '16px',
+        border: '1px solid rgba(0,255,136,0.20)',
+        boxShadow: '0 0 15px rgba(0,255,136,0.18)',
+        transition: 'all 0.3s ease',
+        overflow: 'hidden',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
+      }}
+    >
+      {children}
     </div>
   )
 }
@@ -119,8 +174,12 @@ function OverviewTab() {
           marginBottom: '24px',
         }}
       >
-        <MapView />
-        <WeatherCard />
+        <GlowWrapper>
+          <MapView />
+        </GlowWrapper>
+        <GlowWrapper>
+          <WeatherCard />
+        </GlowWrapper>
       </div>
 
       <div
@@ -130,8 +189,12 @@ function OverviewTab() {
           gap: '16px',
         }}
       >
-        <ChartSection />
-        <PredictionCard />
+        <GlowWrapper>
+          <ChartSection />
+        </GlowWrapper>
+        <GlowWrapper>
+          <PredictionCard />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -141,7 +204,9 @@ function MapTab() {
   return (
     <>
       <SectionHeading title="Map" subtitle="Explore your district and surrounding areas" />
-      <MapView />
+      <GlowWrapper>
+        <MapView />
+      </GlowWrapper>
     </>
   )
 }
@@ -151,7 +216,9 @@ function WeatherTab() {
     <>
       <SectionHeading title="Weather" subtitle="Current conditions and 5-day forecast" />
       <div style={{ maxWidth: '420px' }}>
-        <WeatherCard />
+        <GlowWrapper>
+          <WeatherCard />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -171,8 +238,12 @@ function PredictionsTab() {
           gap: '16px',
         }}
       >
-        <ChartSection />
-        <PredictionCard />
+        <GlowWrapper>
+          <ChartSection />
+        </GlowWrapper>
+        <GlowWrapper>
+          <PredictionCard />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -236,29 +307,64 @@ function LearnCard({
   return (
     <div
       style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '20px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+        ...cardStyle,
         borderLeft: '4px solid #16803c',
       }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
+        e.currentTarget.style.transform = 'translateY(-2px)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
+        e.currentTarget.style.transform = 'translateY(0)'
+      }}
     >
-      <h3 style={{ fontSize: '17px', color: '#16803c', margin: 0 }}>{crop}</h3>
-      <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '8px' }}>
+      <h3
+        style={{
+          fontSize: '17px',
+          color: '#0f3d20',
+          margin: 0,
+          fontWeight: 700,
+          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+        }}
+      >
+        {crop}
+      </h3>
+      <p
+        style={{
+          fontSize: '14px',
+          color: '#1f2937',
+          lineHeight: 1.6,
+          marginTop: '8px',
+        }}
+      >
         {fact}
       </p>
       <div
         style={{
           marginTop: '14px',
-          background: '#fff8e1',
+          background: 'rgba(255, 248, 225, 0.75)',
           padding: '12px',
           borderRadius: '10px',
         }}
       >
-        <p style={{ fontSize: '13px', fontWeight: 600, color: '#8d6e63', margin: 0 }}>
+        <p
+          style={{
+            fontSize: '13px',
+            fontWeight: 600,
+            color: '#7a4a1f',
+            margin: 0,
+          }}
+        >
           🐛 Pest: {pest}
         </p>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+        <p
+          style={{
+            fontSize: '13px',
+            color: '#334155',
+            margin: '4px 0 0 0',
+          }}
+        >
           💊 Treatment: {treatment}
         </p>
       </div>
@@ -274,22 +380,28 @@ function HelpTab() {
         subtitle="Get support, ask questions, or contact a consultant"
       />
 
-      <div
-        style={{
-          background: 'white',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-          maxWidth: '640px',
-        }}
-      >
-        <h3 style={{ fontSize: '16px', color: '#1f2937', margin: 0 }}>
+      <div style={{ ...cardStyle, maxWidth: '640px' }}>
+        <h3 style={{ fontSize: '16px', color: '#0f172a', margin: 0, fontWeight: 700 }}>
           Need help with your farm?
         </h3>
-        <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.7, marginTop: '10px' }}>
+        <p
+          style={{
+            fontSize: '14px',
+            color: '#1f2937',
+            lineHeight: 1.7,
+            marginTop: '10px',
+          }}
+        >
           Our agriculture consultants can help you with:
         </p>
-        <ul style={{ color: '#475569', lineHeight: 1.9, marginTop: '8px', fontSize: '14px' }}>
+        <ul
+          style={{
+            color: '#1f2937',
+            lineHeight: 1.9,
+            marginTop: '8px',
+            fontSize: '14px',
+          }}
+        >
           <li>Pest and disease identification and treatment</li>
           <li>Choosing the right crop variety for your district</li>
           <li>Understanding the Random Forest yield predictions</li>
@@ -307,6 +419,7 @@ function HelpTab() {
             textDecoration: 'none',
             fontWeight: 600,
             fontSize: '14px',
+            boxShadow: '0 0 15px rgba(0,255,136,0.35)',
           }}
         >
           Contact a Consultant
