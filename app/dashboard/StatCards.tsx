@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getSavedLocation, District, districts } from './locationData'
 
 type Stats = {
   temperature: number | null
@@ -66,6 +67,7 @@ function StatCard({
 }
 
 export default function StatCards() {
+  const [location, setLocation] = useState<District>(districts[0])
   const [stats, setStats] = useState<Stats>({
     temperature: null,
     rainfall30d: null,
@@ -74,30 +76,50 @@ export default function StatCards() {
     alertMessage: '',
   })
 
-  // Fetch weather + rainfall
+  // Read saved location + listen for changes
   useEffect(() => {
+    const saved = getSavedLocation()
+    if (saved) setLocation(saved)
+
+    const onLocationChange = () => {
+      const updated = getSavedLocation()
+      if (updated) setLocation(updated)
+    }
+    window.addEventListener('locationChanged', onLocationChange)
+    window.addEventListener('storage', onLocationChange)
+    return () => {
+      window.removeEventListener('locationChanged', onLocationChange)
+      window.removeEventListener('storage', onLocationChange)
+    }
+  }, [])
+
+  // Fetch weather + rainfall for chosen location
+  useEffect(() => {
+    let cancelled = false
+
     const loadWeather = () => {
       fetch(
-        'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335' +
+        `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
           '&current=temperature_2m,weather_code' +
           '&daily=precipitation_sum,weather_code' +
-          '&past_days=30&forecast_days=1' +
+          '&past_days=30&forecast_days=7' +
           '&timezone=Africa/Harare'
       )
         .then((r) => r.json())
         .then((data) => {
-          // Temperature (current)
+          if (cancelled) return
+
           const temp = data.current?.temperature_2m ?? null
-
-          // Rainfall last 30 days = sum of past_days precipitation + today
           const rainfallArray: number[] = data.daily?.precipitation_sum ?? []
-          // Last 30 entries = past 30 days (past_days=30 + forecast_days=1 => 31 entries; take first 30)
-          const last30 = rainfallArray.slice(0, 30)
-          const total = last30.reduce((sum, v) => sum + (v || 0), 0)
 
-          // Alert logic: heavy rain, drought, etc.
+          // Last 30 days (past_days=30 => first 30 entries)
+          const past30 = rainfallArray.slice(0, 30)
+          const total = past30.reduce((sum, v) => sum + (v || 0), 0)
+
+          // Alert logic
           let alertCount = 0
           const messages: string[] = []
+
           if (total < 10) {
             alertCount += 1
             messages.push('Low rainfall — consider irrigation')
@@ -106,7 +128,7 @@ export default function StatCards() {
             alertCount += 1
             messages.push('Heavy rainfall — watch for waterlogging')
           }
-          const nextFewDays = rainfallArray.slice(-7)
+          const nextFewDays = rainfallArray.slice(30, 37)
           const heavyDay = nextFewDays.find((v) => v > 30)
           if (heavyDay) {
             alertCount += 1
@@ -122,40 +144,21 @@ export default function StatCards() {
           }))
         })
         .catch(() => {
-          // leave values as null; card will show "—"
+          // keep previous values on error
         })
     }
 
     loadWeather()
-
-    // Read latest prediction from localStorage (written by PredictionCard)
-    const stored = localStorage.getItem('latestPrediction')
-    if (stored) {
-      const parsed = parseFloat(stored)
-      if (!isNaN(parsed)) {
-        setStats((prev) => ({ ...prev, predictedYield: parsed }))
-      }
-    }
-
-    // Refresh weather every 10 minutes
     const interval = setInterval(loadWeather, 10 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Listen for prediction updates from other tabs/components
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'latestPrediction' && e.newValue) {
-        const val = parseFloat(e.newValue)
-        if (!isNaN(val)) {
-          setStats((prev) => ({ ...prev, predictedYield: val }))
-        }
-      }
+    return () => {
+      cancelled = true
+      clearInterval(interval)
     }
-    window.addEventListener('storage', onStorage)
+  }, [location])
 
-    // Also poll every 3 seconds so updates within the same tab show up
-    const poll = setInterval(() => {
+  // Read latest prediction from localStorage
+  useEffect(() => {
+    const readPrediction = () => {
       const stored = localStorage.getItem('latestPrediction')
       if (stored) {
         const val = parseFloat(stored)
@@ -168,10 +171,23 @@ export default function StatCards() {
           })
         }
       }
-    }, 3000)
+    }
+
+    readPrediction()
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'latestPrediction') readPrediction()
+    }
+    const onPredictionUpdate = () => readPrediction()
+
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('predictionUpdated', onPredictionUpdate)
+
+    const poll = setInterval(readPrediction, 3000)
 
     return () => {
       window.removeEventListener('storage', onStorage)
+      window.removeEventListener('predictionUpdated', onPredictionUpdate)
       clearInterval(poll)
     }
   }, [])
@@ -199,7 +215,12 @@ export default function StatCards() {
         marginBottom: '24px',
       }}
     >
-      <StatCard title="Current Weather" value={tempDisplay} icon="☀️" color="#0ea5e9" />
+      <StatCard
+        title={`Current Weather — ${location.name}`}
+        value={tempDisplay}
+        icon="☀️"
+        color="#0ea5e9"
+      />
       <StatCard
         title="Rainfall (30 days)"
         value={rainfallDisplay}
@@ -227,7 +248,7 @@ export default function StatCards() {
             fontWeight: 500,
           }}
         >
-          🔔 <strong>Alerts:</strong> {stats.alertMessage}
+          🔔 <strong>Alerts for {location.name}:</strong> {stats.alertMessage}
         </div>
       )}
     </div>
