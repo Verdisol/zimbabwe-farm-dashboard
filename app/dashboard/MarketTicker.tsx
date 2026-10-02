@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { marketData } from './marketData'
 
 export default function MarketTicker() {
-  // Inject keyframes once
   useEffect(() => {
     if (document.getElementById('ticker-styles')) return
     const style = document.createElement('style')
@@ -30,7 +29,6 @@ export default function MarketTicker() {
 
   if (!marketData || marketData.length === 0) return null
 
-  // Duplicate the data so the scroll loops seamlessly
   const items = [...marketData, ...marketData]
 
   return (
@@ -48,7 +46,6 @@ export default function MarketTicker() {
         animation: 'tickerPulse 3s ease-in-out infinite',
       }}
     >
-      {/* Left label pill */}
       <div
         style={{
           position: 'absolute',
@@ -71,7 +68,6 @@ export default function MarketTicker() {
         MARKET
       </div>
 
-      {/* Scrolling content */}
       <div
         style={{
           display: 'flex',
