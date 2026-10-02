@@ -1,12 +1,20 @@
 'use client'
 
-export type TabKey = 'overview' | 'map' | 'weather' | 'predictions' | 'learn' | 'help'
+export type TabKey =
+  | 'overview'
+  | 'map'
+  | 'weather'
+  | 'predictions'
+  | 'market'
+  | 'learn'
+  | 'help'
 
 const navItems: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
   { key: 'weather', label: 'Weather' },
   { key: 'predictions', label: 'Predictions' },
+  { key: 'market', label: 'Market' },
   { key: 'learn', label: 'Learn' },
   { key: 'help', label: 'Help' },
 ]
