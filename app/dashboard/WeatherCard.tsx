@@ -94,7 +94,6 @@ export default function WeatherCard() {
   const [air, setAir] = useState<AirQuality | null>(null)
   const [error, setError] = useState('')
 
-  // Read saved location + listen for changes
   useEffect(() => {
     const saved = getSavedLocation()
     if (saved) setLocation(saved)
@@ -111,7 +110,6 @@ export default function WeatherCard() {
     }
   }, [])
 
-  // Fetch weather whenever location changes
   useEffect(() => {
     setWeather(null)
     setAir(null)
@@ -149,6 +147,9 @@ export default function WeatherCard() {
           padding: '24px',
           color: '#dc2626',
           border: '1px solid rgba(0,255,136,0.20)',
+          width: '100%',
+          maxWidth: '820px',
+          margin: '0 auto',
         }}
       >
         {error}
@@ -166,6 +167,9 @@ export default function WeatherCard() {
           padding: '24px',
           color: '#334155',
           border: '1px solid rgba(0,255,136,0.20)',
+          width: '100%',
+          maxWidth: '820px',
+          margin: '0 auto',
         }}
       >
         Loading weather for {location.name}...
@@ -214,10 +218,14 @@ export default function WeatherCard() {
       style={{
         background: 'rgba(255,255,255,0.20)',
         backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         borderRadius: '16px',
         border: '1px solid rgba(0,255,136,0.20)',
         boxShadow: '0 0 15px rgba(0,255,136,0.18)',
         overflow: 'hidden',
+        width: '100%',
+        maxWidth: '820px',
+        margin: '0 auto',
       }}
     >
       <div
@@ -256,28 +264,34 @@ export default function WeatherCard() {
         <div style={{ fontSize: '72px' }}>{icon}</div>
       </div>
 
+      {/* Hourly — grid, no horizontal scroll */}
       <div style={{ padding: '16px 20px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: '0 0 10px 0', letterSpacing: '0.5px' }}>
+        <h3
+          style={{
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#334155',
+            margin: '0 0 10px 0',
+            letterSpacing: '0.5px',
+          }}
+        >
           NEXT 24 HOURS
         </h3>
         <div
           style={{
-            display: 'flex',
-            gap: '10px',
-            overflowX: 'auto',
-            paddingBottom: '8px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(8, minmax(0, 1fr))',
+            gap: '8px',
           }}
         >
           {hourlyWindow.map((h, i) => (
             <div
               key={i}
               style={{
-                flex: '0 0 auto',
                 textAlign: 'center',
                 background: 'rgba(255,255,255,0.25)',
                 borderRadius: '10px',
-                padding: '8px 10px',
-                minWidth: '58px',
+                padding: '8px 4px',
                 border: '1px solid rgba(0,255,136,0.15)',
               }}
             >
@@ -298,8 +312,17 @@ export default function WeatherCard() {
         </div>
       </div>
 
+      {/* 7-day */}
       <div style={{ padding: '0 20px 16px' }}>
-        <h3 style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: '0 0 10px 0', letterSpacing: '0.5px' }}>
+        <h3
+          style={{
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#334155',
+            margin: '0 0 10px 0',
+            letterSpacing: '0.5px',
+          }}
+        >
           7-DAY FORECAST
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -336,6 +359,7 @@ export default function WeatherCard() {
         </div>
       </div>
 
+      {/* Detail grid */}
       <div
         style={{
           padding: '0 20px 20px',
@@ -403,14 +427,22 @@ export default function WeatherCard() {
         <div style={cellStyle}>
           <p style={cellTitle}>Sunrise</p>
           <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: '4px 0 0 0' }}>
-            {new Date(weather.daily.sunrise[0]).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })}
+            {new Date(weather.daily.sunrise[0]).toLocaleTimeString('en', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })}
           </p>
         </div>
 
         <div style={cellStyle}>
           <p style={cellTitle}>Sunset</p>
           <p style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: '4px 0 0 0' }}>
-            {new Date(weather.daily.sunset[0]).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })}
+            {new Date(weather.daily.sunset[0]).toLocaleTimeString('en', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })}
           </p>
         </div>
       </div>
