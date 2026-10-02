@@ -125,22 +125,14 @@ function OverviewTab() {
 
       <StatCards />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
-          gap: '16px',
-          marginBottom: '16px',
-        }}
-      >
-        <GlowWrapper>
-          <MapView />
-        </GlowWrapper>
+      {/* Weather — full width (map removed, it's in LocationPicker) */}
+      <div style={{ marginBottom: '16px' }}>
         <GlowWrapper>
           <WeatherCard />
         </GlowWrapper>
       </div>
 
+      {/* Prediction + Chart */}
       <div
         style={{
           display: 'grid',
