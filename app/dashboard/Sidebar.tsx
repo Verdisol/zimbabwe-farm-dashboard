@@ -34,7 +34,7 @@ export default function Sidebar({
     <aside
       style={{
         width: '230px',
-        minHeight: '100vh',
+        height: '100vh',
         background:
           'linear-gradient(rgba(101,67,33,0.82), rgba(101,67,33,0.82)), url(/images/farmer.jpg)',
         backgroundSize: 'cover',
@@ -42,8 +42,7 @@ export default function Sidebar({
         padding: '24px 14px',
         display: 'flex',
         flexDirection: 'column',
-        position: 'sticky',
-        top: 0,
+        overflowY: 'auto',
         borderRight: '1px solid rgba(255,255,255,0.15)',
       }}
     >
