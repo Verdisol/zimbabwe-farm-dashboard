@@ -7,6 +7,7 @@ import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
+import Market from './Market'
 import { Toaster } from 'sonner'
 
 const cardStyle: React.CSSProperties = {
@@ -46,6 +47,7 @@ export default function DashboardPage() {
           {activeTab === 'map' && <MapTab />}
           {activeTab === 'weather' && <WeatherTab />}
           {activeTab === 'predictions' && <PredictionsTab />}
+          {activeTab === 'market' && <MarketTab />}
           {activeTab === 'learn' && <LearnTab />}
           {activeTab === 'help' && <HelpTab />}
         </main>
@@ -217,8 +219,8 @@ function MapTab() {
 function WeatherTab() {
   return (
     <>
-      <SectionHeading title="Weather" subtitle="Current conditions and 5-day forecast" />
-      <div style={{ maxWidth: '420px' }}>
+      <SectionHeading title="Weather" subtitle="Current conditions and 7-day forecast" />
+      <div style={{ maxWidth: '820px' }}>
         <GlowWrapper>
           <WeatherCard />
         </GlowWrapper>
@@ -248,6 +250,18 @@ function PredictionsTab() {
           <PredictionCard />
         </GlowWrapper>
       </div>
+    </>
+  )
+}
+
+function MarketTab() {
+  return (
+    <>
+      <SectionHeading
+        title="Market"
+        subtitle="Producer prices and wholesale market rates across Zimbabwe"
+      />
+      <Market />
     </>
   )
 }
