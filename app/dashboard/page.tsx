@@ -7,6 +7,7 @@ import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
+import { Toaster } from 'sonner'
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -49,6 +50,8 @@ export default function DashboardPage() {
           {activeTab === 'help' && <HelpTab />}
         </main>
       </div>
+
+      <Toaster position="top-right" richColors />
     </div>
   )
 }
