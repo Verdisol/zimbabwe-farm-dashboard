@@ -1,28 +1,32 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+export type TabKey = 'overview' | 'map' | 'weather' | 'predictions' | 'learn' | 'help'
 
-const navItems = [
-  { label: 'Overview', href: '/dashboard' },
-  { label: 'Map', href: '/dashboard' },
-  { label: 'Weather', href: '/dashboard' },
-  { label: 'Predictions', href: '/dashboard' },
-  { label: 'Learn', href: '/dashboard' },
-  { label: 'Help', href: '/dashboard' },
+const navItems: { key: TabKey; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'map', label: 'Map' },
+  { key: 'weather', label: 'Weather' },
+  { key: 'predictions', label: 'Predictions' },
+  { key: 'learn', label: 'Learn' },
+  { key: 'help', label: 'Help' },
 ]
 
-export default function Sidebar() {
-  const router = useRouter()
-  const pathname = usePathname()
-
+export default function Sidebar({
+  activeTab,
+  onChangeTab,
+}: {
+  activeTab: TabKey
+  onChangeTab: (tab: TabKey) => void
+}) {
   return (
     <aside
       style={{
-        width: '220px',
+        width: '230px',
         minHeight: '100vh',
-        background: 'rgba(101, 67, 33, 0.8)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background:
+          'linear-gradient(rgba(101,67,33,0.82), rgba(101,67,33,0.82)), url(/images/farmer.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         padding: '24px 14px',
         display: 'flex',
         flexDirection: 'column',
@@ -56,38 +60,43 @@ export default function Sidebar() {
         </p>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
         {navItems.map((item) => {
-          const isActive = pathname === item.href && item.label === 'Overview'
+          const isActive = activeTab === item.key
           return (
             <button
-              key={item.label}
-              onClick={() => router.push(item.href)}
+              key={item.key}
+              onClick={() => onChangeTab(item.key)}
               style={{
                 display: 'block',
-                padding: '12px 14px',
-                background: isActive ? 'rgba(22,128,60,0.9)' : 'transparent',
-                color: '#ffffff',
-                border: 'none',
+                width: '100%',
+                padding: '12px 16px',
                 borderRadius: '10px',
+                background: isActive ? 'rgba(0,255,136,0.16)' : 'transparent',
+                border: isActive
+                  ? '1px solid rgba(0,255,136,0.45)'
+                  : '1px solid rgba(255,255,255,0.08)',
+                boxShadow: isActive ? '0 0 20px rgba(0,255,136,0.35)' : 'none',
+                color: '#ffffff',
                 fontSize: '15px',
                 fontWeight: 500,
                 textAlign: 'left',
                 cursor: 'pointer',
-                textShadow: '0 1px 4px rgba(0,0,0,0.55)',
-                boxShadow: isActive ? '0 6px 16px rgba(22,128,60,0.35)' : 'none',
-                transition: 'all 0.2s ease',
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(22,128,60,0.9)'
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(22,128,60,0.55)'
-                e.currentTarget.style.transform = 'translateX(2px)'
+                if (!isActive) {
+                  e.currentTarget.style.background = 'rgba(0,255,136,0.10)'
+                  e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.30)'
+                  e.currentTarget.style.border = '1px solid rgba(0,255,136,0.30)'
+                }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = 'transparent'
                   e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.transform = 'translateX(0)'
+                  e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'
                 }
               }}
             >
@@ -104,7 +113,7 @@ export default function Sidebar() {
         style={{
           marginTop: '24px',
           padding: '12px',
-          background: 'rgba(0,0,0,0.3)',
+          background: 'rgba(0,0,0,0.35)',
           color: 'white',
           border: 'none',
           borderRadius: '10px',
