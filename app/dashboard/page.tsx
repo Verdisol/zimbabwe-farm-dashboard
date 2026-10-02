@@ -11,6 +11,7 @@ import Market from './Market'
 import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
+import LocationPicker from './LocationPicker'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Toaster } from 'sonner'
 
@@ -120,9 +121,10 @@ function OverviewTab() {
     <>
       <SectionHeading title="Overview" subtitle="Your farm at a glance" />
 
+      <LocationPicker />
+
       <StatCards />
 
-      {/* Map + Weather (top row) */}
       <div
         style={{
           display: 'grid',
@@ -139,7 +141,6 @@ function OverviewTab() {
         </GlowWrapper>
       </div>
 
-      {/* Prediction + Chart (bottom row) */}
       <div
         style={{
           display: 'grid',
@@ -162,7 +163,8 @@ function MapTab() {
   return (
     <>
       <SectionHeading title="Map" subtitle="Explore your district and surrounding areas" />
-      <div style={{ height: 'calc(100vh - 180px)', minHeight: '520px' }}>
+      <LocationPicker />
+      <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
         <GlowWrapper>
           <MapView />
         </GlowWrapper>
@@ -175,6 +177,7 @@ function WeatherTab() {
   return (
     <>
       <SectionHeading title="Weather" subtitle="Current conditions and 7-day forecast" />
+      <LocationPicker />
       <GlowWrapper>
         <WeatherCard />
       </GlowWrapper>
