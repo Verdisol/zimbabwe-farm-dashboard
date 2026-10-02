@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getSavedLocation, District, districts } from './locationData'
 
 type Weather = {
   current: {
@@ -39,27 +40,13 @@ type AirQuality = {
 }
 
 const weatherIcons: Record<number, string> = {
-  0: '☀️',
-  1: '🌤️',
-  2: '⛅',
-  3: '☁️',
-  45: '🌫️',
-  48: '🌫️',
-  51: '🌦️',
-  53: '🌦️',
-  55: '🌦️',
-  61: '🌧️',
-  63: '🌧️',
-  65: '🌧️',
-  71: '🌨️',
-  73: '🌨️',
-  75: '🌨️',
-  80: '🌦️',
-  81: '🌧️',
-  82: '⛈️',
-  95: '⛈️',
-  96: '⛈️',
-  99: '⛈️',
+  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+  45: '🌫️', 48: '🌫️',
+  51: '🌦️', 53: '🌦️', 55: '🌦️',
+  61: '🌧️', 63: '🌧️', 65: '🌧️',
+  71: '🌨️', 73: '🌨️', 75: '🌨️',
+  80: '🌦️', 81: '🌧️', 82: '⛈️',
+  95: '⛈️', 96: '⛈️', 99: '⛈️',
 }
 
 function getWeatherLabel(code: number): string {
@@ -102,20 +89,43 @@ function getVisibilityLabel(km: number): { label: string; color: string } {
 }
 
 export default function WeatherCard() {
+  const [location, setLocation] = useState<District>(districts[0])
   const [weather, setWeather] = useState<Weather | null>(null)
   const [air, setAir] = useState<AirQuality | null>(null)
   const [error, setError] = useState('')
 
+  // Read saved location + listen for changes
   useEffect(() => {
+    const saved = getSavedLocation()
+    if (saved) setLocation(saved)
+
+    const onLocationChange = () => {
+      const updated = getSavedLocation()
+      if (updated) setLocation(updated)
+    }
+    window.addEventListener('locationChanged', onLocationChange)
+    window.addEventListener('storage', onLocationChange)
+    return () => {
+      window.removeEventListener('locationChanged', onLocationChange)
+      window.removeEventListener('storage', onLocationChange)
+    }
+  }, [])
+
+  // Fetch weather whenever location changes
+  useEffect(() => {
+    setWeather(null)
+    setAir(null)
+    setError('')
+
     const weatherUrl =
-      'https://api.open-meteo.com/v1/forecast?latitude=-17.8252&longitude=31.0335' +
+      `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code,visibility' +
       '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,sunrise,sunset,uv_index_max,wind_speed_10m_max' +
       '&hourly=temperature_2m,precipitation_probability,weather_code' +
       '&timezone=Africa/Harare&forecast_days=7'
 
     const airUrl =
-      'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=-17.8252&longitude=31.0335' +
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${location.lat}&longitude=${location.lng}` +
       '&current=european_aqi&timezone=Africa/Harare'
 
     Promise.all([
@@ -127,7 +137,7 @@ export default function WeatherCard() {
         setAir(a)
       })
       .catch(() => setError('Could not load weather'))
-  }, [])
+  }, [location])
 
   if (error) {
     return (
@@ -158,7 +168,7 @@ export default function WeatherCard() {
           border: '1px solid rgba(0,255,136,0.20)',
         }}
       >
-        Loading weather...
+        Loading weather for {location.name}...
       </div>
     )
   }
@@ -172,11 +182,8 @@ export default function WeatherCard() {
   const uvInfo = getUVLabel(weather.daily.uv_index_max[0])
   const visInfo = getVisibilityLabel(weather.current.visibility / 1000)
 
-  // Next 24 hours
   const now = new Date()
-  const hourlyStart = weather.hourly.time.findIndex(
-    (t) => new Date(t) >= now
-  )
+  const hourlyStart = weather.hourly.time.findIndex((t) => new Date(t) >= now)
   const hourlyWindow = weather.hourly.time
     .slice(hourlyStart, hourlyStart + 24)
     .map((t, i) => ({
@@ -213,7 +220,6 @@ export default function WeatherCard() {
         overflow: 'hidden',
       }}
     >
-      {/* Header */}
       <div
         style={{
           padding: '16px 20px',
@@ -221,14 +227,13 @@ export default function WeatherCard() {
         }}
       >
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-          ☀️ Weather — Harare, Zimbabwe
+          ☀️ Weather — {location.name}, {location.province}
         </h2>
         <p style={{ fontSize: '12px', color: '#334155', margin: '2px 0 0 0' }}>
-          Live data from Open-Meteo
+          Live data from Open-Meteo · {location.lat.toFixed(2)}, {location.lng.toFixed(2)}
         </p>
       </div>
 
-      {/* Current conditions */}
       <div
         style={{
           padding: '24px',
@@ -243,9 +248,7 @@ export default function WeatherCard() {
           <div style={{ fontSize: '52px', fontWeight: 700, lineHeight: 1 }}>
             {Math.round(weather.current.temperature_2m)}°C
           </div>
-          <div style={{ fontSize: '14px', marginTop: '6px', opacity: 0.95 }}>
-            {label}
-          </div>
+          <div style={{ fontSize: '14px', marginTop: '6px', opacity: 0.95 }}>{label}</div>
           <div style={{ fontSize: '13px', marginTop: '4px', opacity: 0.85 }}>
             Feels like {Math.round(weather.current.apparent_temperature)}° · H{todayMax}° L{todayMin}°
           </div>
@@ -253,7 +256,6 @@ export default function WeatherCard() {
         <div style={{ fontSize: '72px' }}>{icon}</div>
       </div>
 
-      {/* Hourly + 7-day forecast */}
       <div style={{ padding: '16px 20px' }}>
         <h3 style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: '0 0 10px 0', letterSpacing: '0.5px' }}>
           NEXT 24 HOURS
@@ -296,7 +298,6 @@ export default function WeatherCard() {
         </div>
       </div>
 
-      {/* 7-day forecast */}
       <div style={{ padding: '0 20px 16px' }}>
         <h3 style={{ fontSize: '12px', fontWeight: 700, color: '#334155', margin: '0 0 10px 0', letterSpacing: '0.5px' }}>
           7-DAY FORECAST
@@ -335,7 +336,6 @@ export default function WeatherCard() {
         </div>
       </div>
 
-      {/* Detail grid */}
       <div
         style={{
           padding: '0 20px 20px',
