@@ -8,6 +8,7 @@ import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 import Market from './Market'
+import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Toaster } from 'sonner'
 
 const cardStyle: React.CSSProperties = {
@@ -268,13 +269,74 @@ function MarketTab() {
 }
 
 function LearnTab() {
+  const [category, setCategory] = useState<LearnCategory>('all')
+
+  const filtered =
+    category === 'all' ? learnItems : learnItems.filter((i) => i.category === category)
+
   return (
     <>
       <SectionHeading
         title="Did You Know?"
-        subtitle="Crop education, pest help, and best practices"
+        subtitle="Crop education, pest help, disease identification, and best practices"
       />
 
+      {/* Category bars */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '20px',
+        }}
+      >
+        {learnCategories.map((c) => {
+          const isActive = category === c.key
+          return (
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 16px',
+                borderRadius: '999px',
+                border: isActive
+                  ? '1px solid rgba(0,255,136,0.55)'
+                  : '1px solid rgba(255,255,255,0.4)',
+                background: isActive
+                  ? 'rgba(0,255,136,0.20)'
+                  : 'rgba(255,255,255,0.35)',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                boxShadow: isActive ? '0 0 15px rgba(0,255,136,0.40)' : 'none',
+                transition: 'all 0.25s ease',
+                backdropFilter: 'blur(6px)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,136,0.25)'
+                  e.currentTarget.style.background = 'rgba(0,255,136,0.10)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.boxShadow = 'none'
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.35)'
+                }
+              }}
+            >
+              <span>{c.icon}</span>
+              {c.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Cards grid */}
       <div
         style={{
           display: 'grid',
@@ -282,111 +344,69 @@ function LearnTab() {
           gap: '16px',
         }}
       >
-        <LearnCard
-          crop="Maize"
-          fact="Maize needs 500–800 mm of rainfall per season. Plant with the first effective rains."
-          pest="Fall armyworm"
-          treatment="Scout early, apply neem oil or approved pesticide, and rotate crops."
-        />
-        <LearnCard
-          crop="Sorghum"
-          fact="Sorghum is drought-tolerant and needs only 400 mm of rainfall. Great for dry areas."
-          pest="Striga weed"
-          treatment="Rotate with legumes and use resistant varieties."
-        />
-        <LearnCard
-          crop="Groundnuts"
-          fact="Groundnuts fix nitrogen in the soil, improving fertility for the next crop."
-          pest="Leaf spot disease"
-          treatment="Use resistant varieties and practice crop rotation."
-        />
-        <LearnCard
-          crop="Cowpeas"
-          fact="Cowpeas are a fast-maturing legume that improves soil and provides protein."
-          pest="Aphids"
-          treatment="Spray with soapy water or use neem-based solutions."
-        />
+        {filtered.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              ...cardStyle,
+              borderLeft: '4px solid #16803c',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
+              e.currentTarget.style.transform = 'translateY(-2px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+          >
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>{item.icon}</div>
+            <h3
+              style={{
+                fontSize: '17px',
+                color: '#0f3d20',
+                margin: 0,
+                fontWeight: 700,
+                textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+              }}
+            >
+              {item.title}
+            </h3>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#1f2937',
+                lineHeight: 1.6,
+                marginTop: '8px',
+              }}
+            >
+              {item.body}
+            </p>
+            {item.action && (
+              <div
+                style={{
+                  marginTop: '14px',
+                  background: 'rgba(255, 248, 225, 0.75)',
+                  padding: '12px',
+                  borderRadius: '10px',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#334155',
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  💊 <strong>Action:</strong> {item.action}
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </>
-  )
-}
-
-function LearnCard({
-  crop,
-  fact,
-  pest,
-  treatment,
-}: {
-  crop: string
-  fact: string
-  pest: string
-  treatment: string
-}) {
-  return (
-    <div
-      style={{
-        ...cardStyle,
-        borderLeft: '4px solid #16803c',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
-        e.currentTarget.style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
-        e.currentTarget.style.transform = 'translateY(0)'
-      }}
-    >
-      <h3
-        style={{
-          fontSize: '17px',
-          color: '#0f3d20',
-          margin: 0,
-          fontWeight: 700,
-          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
-        }}
-      >
-        {crop}
-      </h3>
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#1f2937',
-          lineHeight: 1.6,
-          marginTop: '8px',
-        }}
-      >
-        {fact}
-      </p>
-      <div
-        style={{
-          marginTop: '14px',
-          background: 'rgba(255, 248, 225, 0.75)',
-          padding: '12px',
-          borderRadius: '10px',
-        }}
-      >
-        <p
-          style={{
-            fontSize: '13px',
-            fontWeight: 600,
-            color: '#7a4a1f',
-            margin: 0,
-          }}
-        >
-          🐛 Pest: {pest}
-        </p>
-        <p
-          style={{
-            fontSize: '13px',
-            color: '#334155',
-            margin: '4px 0 0 0',
-          }}
-        >
-          💊 Treatment: {treatment}
-        </p>
-      </div>
-    </div>
   )
 }
 
