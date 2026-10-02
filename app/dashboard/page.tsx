@@ -3,6 +3,7 @@ import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
+import PredictionCard from './PredictionCard'
 
 export default function DashboardPage() {
   return (
@@ -39,8 +40,16 @@ export default function DashboardPage() {
             <WeatherCard />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+              gap: '16px',
+              marginBottom: '24px',
+            }}
+          >
             <ChartSection />
+            <PredictionCard />
           </div>
 
           <div
@@ -52,13 +61,9 @@ export default function DashboardPage() {
             }}
           >
             <h2 style={{ fontSize: '18px', color: '#1f2937', marginTop: 0 }}>
-              Getting started
+              More coming soon
             </h2>
-            <p style={{ color: '#64748b', lineHeight: 1.7 }}>
-              More features coming soon:
-            </p>
             <ul style={{ color: '#475569', lineHeight: 1.9, marginTop: '8px' }}>
-              <li>🤖 Random Forest predictions of your crop yield</li>
               <li>🔔 Weather alerts and notifications</li>
               <li>📚 "Did You Know" crop education and pest help</li>
             </ul>
