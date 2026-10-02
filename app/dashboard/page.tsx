@@ -10,6 +10,7 @@ import PredictionCard from './PredictionCard'
 import Market from './Market'
 import Subscription from './Subscription'
 import Charts from './Charts'
+import StatCards from './StatCards'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Toaster } from 'sonner'
 
@@ -59,50 +60,6 @@ export default function DashboardPage() {
       </div>
 
       <Toaster position="top-right" richColors />
-    </div>
-  )
-}
-
-function StatCard({
-  title,
-  value,
-  icon,
-  color,
-}: {
-  title: string
-  value: string
-  icon: string
-  color: string
-}) {
-  return (
-    <div
-      style={{
-        ...cardStyle,
-        borderLeft: `4px solid ${color}`,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
-        e.currentTarget.style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
-        e.currentTarget.style.transform = 'translateY(0)'
-      }}
-    >
-      <div style={{ fontSize: '24px', marginBottom: '8px' }}>{icon}</div>
-      <p style={{ fontSize: '13px', color: '#1f2937', margin: 0, fontWeight: 500 }}>
-        {title}
-      </p>
-      <p
-        style={{
-          fontSize: '22px',
-          fontWeight: 700,
-          color: '#0f172a',
-          margin: '4px 0 0 0',
-        }}
-      >
-        {value}
-      </p>
     </div>
   )
 }
@@ -163,20 +120,7 @@ function OverviewTab() {
     <>
       <SectionHeading title="Overview" subtitle="Your farm at a glance" />
 
-      {/* Stat cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
-        <StatCard title="Current Weather" value="—" icon="☀️" color="#0ea5e9" />
-        <StatCard title="Rainfall (30 days)" value="— mm" icon="🌧️" color="#16803c" />
-        <StatCard title="Predicted Yield" value="— t/ha" icon="🌽" color="#f59e0b" />
-        <StatCard title="Alerts" value="0 active" icon="🔔" color="#dc2626" />
-      </div>
+      <StatCards />
 
       {/* Map + Weather (top row) */}
       <div
@@ -195,7 +139,7 @@ function OverviewTab() {
         </GlowWrapper>
       </div>
 
-      {/* Prediction + Chart (bottom row, prediction directly below map) */}
+      {/* Prediction + Chart (bottom row) */}
       <div
         style={{
           display: 'grid',
