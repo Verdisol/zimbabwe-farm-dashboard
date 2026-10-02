@@ -12,7 +12,18 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }}>
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        backgroundImage:
+          'linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url(/images/background.jpeg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }}
+    >
       <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
