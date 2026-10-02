@@ -8,6 +8,7 @@ import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 import Market from './Market'
+import Subscription from './Subscription'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Toaster } from 'sonner'
 
@@ -51,6 +52,7 @@ export default function DashboardPage() {
           {activeTab === 'market' && <MarketTab />}
           {activeTab === 'learn' && <LearnTab />}
           {activeTab === 'help' && <HelpTab />}
+          {activeTab === 'subscribe' && <SubscribeTab />}
         </main>
       </div>
 
@@ -281,7 +283,6 @@ function LearnTab() {
         subtitle="Crop education, pest help, disease identification, and best practices"
       />
 
-      {/* Category bars */}
       <div
         style={{
           display: 'flex',
@@ -336,7 +337,6 @@ function LearnTab() {
         })}
       </div>
 
-      {/* Cards grid */}
       <div
         style={{
           display: 'grid',
@@ -463,6 +463,18 @@ function HelpTab() {
           Contact a Consultant
         </a>
       </div>
+    </>
+  )
+}
+
+function SubscribeTab() {
+  return (
+    <>
+      <SectionHeading
+        title="Subscription"
+        subtitle="Choose a plan and pay with EcoCash, Mukuru, InnBucks, or Bank Transfer"
+      />
+      <Subscription />
     </>
   )
 }
