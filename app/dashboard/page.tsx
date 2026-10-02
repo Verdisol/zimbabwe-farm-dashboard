@@ -139,6 +139,7 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
         boxShadow: '0 0 15px rgba(0,255,136,0.18)',
         transition: 'all 0.3s ease',
         overflow: 'hidden',
+        height: '100%',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
@@ -209,9 +210,11 @@ function MapTab() {
   return (
     <>
       <SectionHeading title="Map" subtitle="Explore your district and surrounding areas" />
-      <GlowWrapper>
-        <MapView />
-      </GlowWrapper>
+      <div style={{ height: 'calc(100vh - 180px)', minHeight: '520px' }}>
+        <GlowWrapper>
+          <MapView />
+        </GlowWrapper>
+      </div>
     </>
   )
 }
@@ -220,11 +223,9 @@ function WeatherTab() {
   return (
     <>
       <SectionHeading title="Weather" subtitle="Current conditions and 7-day forecast" />
-      <div style={{ maxWidth: '820px' }}>
-        <GlowWrapper>
-          <WeatherCard />
-        </GlowWrapper>
-      </div>
+      <GlowWrapper>
+        <WeatherCard />
+      </GlowWrapper>
     </>
   )
 }
