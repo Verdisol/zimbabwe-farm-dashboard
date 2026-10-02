@@ -8,6 +8,7 @@ export type TabKey =
   | 'market'
   | 'learn'
   | 'help'
+  | 'subscribe'
 
 const navItems: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -17,6 +18,7 @@ const navItems: { key: TabKey; label: string }[] = [
   { key: 'market', label: 'Market' },
   { key: 'learn', label: 'Learn' },
   { key: 'help', label: 'Help' },
+  { key: 'subscribe', label: 'Subscription' },
 ]
 
 export default function Sidebar({
