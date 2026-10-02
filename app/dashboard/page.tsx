@@ -9,6 +9,7 @@ import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 import Market from './Market'
 import Subscription from './Subscription'
+import Charts from './Charts'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Toaster } from 'sonner'
 
@@ -49,6 +50,7 @@ export default function DashboardPage() {
           {activeTab === 'map' && <MapTab />}
           {activeTab === 'weather' && <WeatherTab />}
           {activeTab === 'predictions' && <PredictionsTab />}
+          {activeTab === 'charts' && <ChartsTab />}
           {activeTab === 'market' && <MarketTab />}
           {activeTab === 'learn' && <LearnTab />}
           {activeTab === 'help' && <HelpTab />}
@@ -161,6 +163,7 @@ function OverviewTab() {
     <>
       <SectionHeading title="Overview" subtitle="Your farm at a glance" />
 
+      {/* Stat cards */}
       <div
         style={{
           display: 'grid',
@@ -175,12 +178,13 @@ function OverviewTab() {
         <StatCard title="Alerts" value="0 active" icon="🔔" color="#dc2626" />
       </div>
 
+      {/* Map + Weather (top row) */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
           gap: '16px',
-          marginBottom: '24px',
+          marginBottom: '16px',
         }}
       >
         <GlowWrapper>
@@ -191,6 +195,7 @@ function OverviewTab() {
         </GlowWrapper>
       </div>
 
+      {/* Prediction + Chart (bottom row, prediction directly below map) */}
       <div
         style={{
           display: 'grid',
@@ -199,10 +204,10 @@ function OverviewTab() {
         }}
       >
         <GlowWrapper>
-          <ChartSection />
+          <PredictionCard />
         </GlowWrapper>
         <GlowWrapper>
-          <PredictionCard />
+          <ChartSection />
         </GlowWrapper>
       </div>
     </>
@@ -254,6 +259,18 @@ function PredictionsTab() {
           <PredictionCard />
         </GlowWrapper>
       </div>
+    </>
+  )
+}
+
+function ChartsTab() {
+  return (
+    <>
+      <SectionHeading
+        title="Charts"
+        subtitle="Visual analysis of maize yield, crop distribution, and frequency"
+      />
+      <Charts />
     </>
   )
 }
