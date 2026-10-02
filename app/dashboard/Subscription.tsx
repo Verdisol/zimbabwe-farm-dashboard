@@ -7,9 +7,27 @@ type Plan = 'monthly' | 'quarterly' | 'yearly'
 type Method = 'ecocash' | 'mukuru' | 'innbucks' | 'bank'
 
 const plans: { key: Plan; label: string; price: number; period: string; note: string }[] = [
-  { key: 'monthly', label: 'Monthly', price: 2, period: '/month', note: 'Best for trying out' },
-  { key: 'quarterly', label: 'Quarterly', price: 5, period: '/3 months', note: 'Save 16%' },
-  { key: 'yearly', label: 'Yearly', price: 15, period: '/year', note: 'Best value — save 37%' },
+  {
+    key: 'monthly',
+    label: 'Monthly',
+    price: 40,
+    period: '/month',
+    note: 'Best for trying out the full dashboard',
+  },
+  {
+    key: 'quarterly',
+    label: 'Quarterly',
+    price: 100,
+    period: '/3 months',
+    note: 'Save USD 20 (17% off)',
+  },
+  {
+    key: 'yearly',
+    label: 'Yearly',
+    price: 400,
+    period: '/year',
+    note: 'Save USD 80 (17% off)',
+  },
 ]
 
 const methods: { key: Method; label: string; icon: string; instructions: string }[] = [
@@ -18,7 +36,7 @@ const methods: { key: Method; label: string; icon: string; instructions: string 
     label: 'EcoCash',
     icon: '📱',
     instructions:
-      'Dial *151*2*2*[merchant code]*[amount]# and enter your PIN. Use the reference code shown after submission as your payment reference.',
+      'Dial *151*2*2*[merchant code]*[amount]# and enter your PIN. Use the reference code shown above as your payment reference so we can match your payment.',
   },
   {
     key: 'mukuru',
@@ -116,7 +134,6 @@ export default function Subscription() {
             padding: '24px',
           }}
         >
-          {/* Plan selection */}
           <h2 style={{ fontSize: '16px', color: '#0f172a', margin: '0 0 12px 0' }}>
             1. Choose a plan
           </h2>
@@ -189,7 +206,6 @@ export default function Subscription() {
             })}
           </div>
 
-          {/* Payment method selection */}
           <h2 style={{ fontSize: '16px', color: '#0f172a', margin: '0 0 12px 0' }}>
             2. Choose a payment method
           </h2>
@@ -240,7 +256,6 @@ export default function Subscription() {
             })}
           </div>
 
-          {/* Farmer details */}
           <h2 style={{ fontSize: '16px', color: '#0f172a', margin: '0 0 12px 0' }}>
             3. Your details
           </h2>
