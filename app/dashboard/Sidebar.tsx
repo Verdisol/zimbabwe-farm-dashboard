@@ -1,18 +1,19 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: '🏠' },
-  { label: 'Map', href: '/dashboard/map', icon: '🗺️' },
-  { label: 'Weather', href: '/dashboard/weather', icon: '☀️' },
-  { label: 'Predictions', href: '/dashboard/predictions', icon: '🤖' },
-  { label: 'Learn', href: '/dashboard/learn', icon: '📚' },
-  { label: 'Help', href: '/dashboard/help', icon: '💬' },
+  { label: 'Map', href: '/dashboard', icon: '🗺️' },
+  { label: 'Weather', href: '/dashboard', icon: '☀️' },
+  { label: 'Predictions', href: '/dashboard', icon: '🤖' },
+  { label: 'Learn', href: '/dashboard', icon: '📚' },
+  { label: 'Help', href: '/dashboard', icon: '💬' },
 ]
 
 export default function Sidebar() {
   const router = useRouter()
+  const pathname = usePathname()
 
   return (
     <aside
@@ -38,32 +39,38 @@ export default function Sidebar() {
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-        {navItems.map((item) => (
-          <button
-            key={item.href}
-            onClick={() => router.push(item.href)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 12px',
-              background: 'transparent',
-              color: 'white',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '15px',
-              textAlign: 'left',
-              cursor: 'pointer',
-              fontWeight: 500,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#14672f')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            <span style={{ fontSize: '18px' }}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <button
+              key={item.label}
+              onClick={() => router.push(item.href)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 12px',
+                background: isActive ? '#14672f' : 'transparent',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '15px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.background = '#14672f'
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              {item.label}
+            </button>
+          )
+        })}
       </nav>
 
       <button
