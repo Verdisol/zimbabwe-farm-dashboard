@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { Toaster } from 'sonner'
 
 export default function Home() {
   const [email, setEmail] = useState('')
@@ -23,14 +25,23 @@ export default function Home() {
 
       if (res.ok) {
         setMessage('✅ Logged in! Redirecting...')
+        toast.success('Welcome back! 🌾', {
+          description: 'Redirecting to your dashboard...',
+        })
         setTimeout(() => {
           window.location.href = '/dashboard'
         }, 1000)
       } else {
         setMessage('❌ ' + (data.error || 'Login failed'))
+        toast.error('Login failed', {
+          description: data.error || 'Check your email and password.',
+        })
       }
     } catch (err) {
       setMessage('❌ Network error. Please try again.')
+      toast.error('Network error', {
+        description: 'Could not reach the server. Please try again.',
+      })
     } finally {
       setLoading(false)
     }
@@ -209,6 +220,8 @@ export default function Home() {
           </a>
         </p>
       </div>
+
+      <Toaster position="top-right" richColors />
     </div>
   )
 }
