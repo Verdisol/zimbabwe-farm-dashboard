@@ -214,12 +214,10 @@ function computePlantingStrategy(
   const isWet = outlook.status === 'above-normal'
   const days = outlook.daysAvailable
 
-  // Headline
   let headline = 'Plan for a normal season'
   if (isDry) headline = 'Drought year — plant with irrigation backup'
   if (isWet) headline = 'Good rainfall year — full season available'
 
-  // Planting window
   let plantingWindow = ''
   if (outlook.onsetMonth) {
     plantingWindow = `Plant with the first effective rains in ${onsetLabel}. If the onset is delayed, prepare planting basins (15cm × 15cm × 15cm) and pot-hole to capture the first rain.`
@@ -227,7 +225,6 @@ function computePlantingStrategy(
     plantingWindow = `Onset is uncertain. Prepare planting basins now (15cm × 15cm × 15cm) and plant immediately after any 30mm+ rainfall event.`
   }
 
-  // Irrigation bridging
   let irrigationBridging = ''
   let irrigationNeeded = false
   let irrigationFrequency = ''
@@ -235,21 +232,20 @@ function computePlantingStrategy(
   if (isDry) {
     irrigationNeeded = true
     irrigationFrequency = 'Every 5–7 days'
-    irrigationBridging = `Rains are below normal. If you plant and a dry spell exceeds 7 days, irrigate 20–25mm every 5–7 days to keep plants alive. For severe wilting, pot-hole between plants and apply 1–2 litres per plant. Avoid top-dressing nitrogen during drought — it can burn plants. When rains return, plants will use the nutrients already in the soil.`
+    irrigationBridging = `Rains are below normal. If you plant and a dry spell exceeds 7 days, irrigate 20–25mm every 5–7 days to keep plants alive. For severe wilting, pot-hole between plants and apply 1–2 litres per plant. Avoid top-dressing nitrogen during drought — it can burn plants.`
   } else if (isWet) {
     irrigationBridging = `Good rainfall expected. No bridging irrigation needed unless a dry spell exceeds 14 days. Focus on drainage in low-lying fields.`
   } else {
     irrigationBridging = `Normal rainfall expected. Monitor 10-day forecasts. If a dry spell exceeds 10 days during flowering, apply supplementary irrigation.`
   }
 
-  // Variety advice — match flowering window to rainfall peak
   let varietyAdvice = ''
   if (isDry) {
-    varietyAdvice = `Choose ultra-early or early varieties that flower before the driest months. For maize: SC 449 (90 days) or SC 419 (120 days) — they flower in January when rains are more reliable. For sorghum: Macia (115 days) or SV 2 (110 days). These escape late-season drought.`
+    varietyAdvice = `Choose ultra-early or early varieties that flower before the driest months. For maize: SC 449 (90 days) or SC 419 (120 days). For sorghum: Macia (115 days) or SV 2 (110 days).`
   } else if (isWet && days >= 140) {
-    varietyAdvice = `Full season available (~${days} days). You can plant late-maturing, high-yielding varieties. For maize: SC 727 (158 days) or SC 719 (150 days) — Zimbabwe's top yielders. For wheat (winter irrigated): SC Sekuru or SC Smart.`
+    varietyAdvice = `Full season available (~${days} days). You can plant late-maturing, high-yielding varieties. For maize: SC 727 (158 days) or SC 719 (150 days).`
   } else {
-    varietyAdvice = `Growing window ~${days} days. Choose medium-maturing varieties that fit the season. For maize: SC 633 (140 days) or SC 419 (120 days). For tobacco: KRK 26 or T 66.`
+    varietyAdvice = `Growing window ~${days} days. Choose medium-maturing varieties: SC 633 (140 days) or SC 419 (120 days).`
   }
 
   return {
@@ -379,21 +375,31 @@ export default function CropAdvisor() {
           0%, 100% {
             opacity: 1;
             text-shadow:
-              0 0 2px #ffffff,
-              0 0 6px #ffffff,
-              0 1px 0 rgba(0,0,0,0.85);
+              0 0 1px #ffffff,
+              0 0 3px #ffffff,
+              0 0 6px rgba(255,255,255,0.9),
+              0 1px 0 rgba(0,0,0,0.9);
           }
-          50% {
-            opacity: 0.65;
+          40% {
+            opacity: 0.95;
             text-shadow:
-              0 0 4px #ffffff,
+              0 0 6px #ffffff,
+              0 0 14px #ffffff,
+              0 0 26px rgba(255,255,255,0.85),
+              0 1px 0 rgba(0,0,0,0.9);
+          }
+          55% {
+            opacity: 0.55;
+            text-shadow:
               0 0 10px #ffffff,
-              0 0 18px rgba(255,255,255,0.7),
-              0 1px 0 rgba(0,0,0,0.85);
+              0 0 22px #ffffff,
+              0 0 40px rgba(255,255,255,0.95),
+              0 0 60px rgba(255,255,255,0.6),
+              0 1px 0 rgba(0,0,0,0.9);
           }
         }
         .blinking-footnote {
-          animation: footnoteBlink 2.2s ease-in-out infinite;
+          animation: footnoteBlink 1.6s ease-in-out infinite;
         }
       `}</style>
 
@@ -712,7 +718,7 @@ export default function CropAdvisor() {
         </div>
       )}
 
-      {/* Planting Strategy — NEW */}
+      {/* Planting Strategy */}
       <div
         style={{
           ...cardStyle,
