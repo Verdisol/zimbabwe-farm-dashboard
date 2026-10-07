@@ -118,22 +118,50 @@ export const crops: CropRequirement[] = [
       'Harvest when pods dry and turn brown',
     ],
   },
+  {
+    name: 'Sunflower',
+    minRainfall: 400,
+    maxRainfall: 600,
+    optimalRainfall: 500,
+    droughtTolerance: 'medium',
+    growingDays: 110,
+    bestZones: ['II', 'III'],
+    description: 'Oilseed crop with good market demand. Moderately drought-tolerant.',
+    plantingSteps: [
+      'Plant at onset of rains',
+      'Space rows 75cm apart, plants 25cm apart',
+      'Apply basal fertilizer',
+      'Control weeds in first 6 weeks',
+      'Harvest when heads turn brown and seeds dry',
+    ],
+  },
 ]
 
-export function getCropAdvice(rainfall: number, droughtStatus: string): CropRequirement[] {
-  let recommended = crops
+/**
+ * Recommend crops based on the estimated seasonal rainfall (mm)
+ * and the drought status.
+ *
+ * Logic:
+ *  - If drought or extreme drought → keep only high / very-high drought-tolerant crops
+ *  - A crop is recommended if seasonal rainfall is at least 70% of its minimum requirement
+ *    (this allows some flexibility for uncertain estimates)
+ */
+export function getCropAdvice(
+  seasonalRainfall: number,
+  droughtStatus: string
+): CropRequirement[] {
+  const isDrought =
+    droughtStatus === 'drought' || droughtStatus === 'extreme-drought'
 
-  // If drought conditions, prefer drought-tolerant crops
-  if (droughtStatus === 'drought' || droughtStatus === 'extreme-drought') {
-    recommended = crops.filter(
-      (c) => c.droughtTolerance === 'high' || c.droughtTolerance === 'very-high'
-    )
-  }
+  const pool = isDrought
+    ? crops.filter(
+        (c) =>
+          c.droughtTolerance === 'high' ||
+          c.droughtTolerance === 'very-high'
+      )
+    : crops
 
-  // Filter by rainfall availability
-  return recommended.filter(
-    (c) => rainfall >= c.minRainfall && rainfall <= c.maxRainfall * 1.2
-  )
+  return pool.filter((c) => seasonalRainfall >= c.minRainfall * 0.7)
 }
 
 export function getZoneFromLocation(districtName: string): string {
