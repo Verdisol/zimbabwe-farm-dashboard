@@ -5,8 +5,30 @@ import { getSavedLocation, District, districts } from './locationData'
 
 const API_URL = 'https://zimbabwe-farm-ml-api.onrender.com/predict'
 
+// Crops available in the ML API
+const predictCrops = [
+  { key: 'maize', label: 'Maize', unit: 't/ha' },
+  { key: 'sorghum', label: 'Sorghum', unit: 't/ha' },
+  { key: 'pearl millet', label: 'Pearl Millet', unit: 't/ha' },
+  { key: 'finger millet', label: 'Finger Millet', unit: 't/ha' },
+  { key: 'groundnuts', label: 'Groundnuts', unit: 't/ha' },
+  { key: 'cowpeas', label: 'Cowpeas', unit: 't/ha' },
+  { key: 'sunflower', label: 'Sunflower', unit: 't/ha' },
+  { key: 'tomatoes', label: 'Tomatoes', unit: 't/ha' },
+  { key: 'potatoes', label: 'Potatoes', unit: 't/ha' },
+  { key: 'onions', label: 'Onions', unit: 't/ha' },
+  { key: 'cabbage', label: 'Cabbage', unit: 't/ha' },
+  { key: 'carrots', label: 'Carrots', unit: 't/ha' },
+  { key: 'butternuts', label: 'Butternuts', unit: 't/ha' },
+  { key: 'peas', label: 'Peas', unit: 't/ha' },
+  { key: 'rape', label: 'Rape', unit: 't/ha' },
+  { key: 'covo', label: 'Covo', unit: 't/ha' },
+  { key: 'tsunga', label: 'Tsunga', unit: 't/ha' },
+]
+
 export default function PredictionCard() {
   const [location, setLocation] = useState<District>(districts[0])
+  const [crop, setCrop] = useState('maize')
   const [rainfall, setRainfall] = useState('700')
   const [temperature, setTemperature] = useState('24')
   const [fertilizer, setFertilizer] = useState('60')
@@ -16,9 +38,14 @@ export default function PredictionCard() {
   const [result, setResult] = useState<null | {
     predicted_yield_t_ha: number
     confidence_range: { low: number; high: number }
+    crop: string
+    unit: string
+    type?: string
   }>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const selectedCrop = predictCrops.find((c) => c.key === crop) ?? predictCrops[0]
 
   // Track location changes
   useEffect(() => {
@@ -52,13 +79,11 @@ export default function PredictionCard() {
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
-        // Temperature: use current
         const currentTemp = data.current?.temperature_2m
         if (currentTemp != null) {
           setTemperature(Math.round(currentTemp).toString())
         }
 
-        // Rainfall: estimate seasonal from past 30 days × 5
         const arr: number[] = data.daily?.precipitation_sum ?? []
         const past30 = arr.slice(0, 30)
         const total30 = past30.reduce((s, v) => s + (v || 0), 0)
@@ -86,7 +111,7 @@ export default function PredictionCard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          crop: 'maize',
+          crop,
           rainfall: parseFloat(rainfall),
           temperature: parseFloat(temperature),
           fertilizer: parseFloat(fertilizer),
@@ -99,6 +124,9 @@ export default function PredictionCard() {
         setResult({
           predicted_yield_t_ha: data.predicted_yield_t_ha,
           confidence_range: data.confidence_range,
+          crop: data.crop || crop,
+          unit: data.unit || 't/ha',
+          type: data.type,
         })
         localStorage.setItem(
           'latestPrediction',
@@ -157,7 +185,7 @@ export default function PredictionCard() {
         }}
       >
         <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-          🤖 Maize Yield Prediction
+          🤖 Crop Yield Prediction
         </h2>
         <p style={{ fontSize: '12px', color: '#334155', margin: '2px 0 0 0' }}>
           Auto-filled from {location.name} weather · Random Forest model
@@ -173,6 +201,25 @@ export default function PredictionCard() {
           gap: '14px',
         }}
       >
+        {/* Crop selector */}
+        <div>
+          <label style={labelStyle}>Select crop</label>
+          <select
+            value={crop}
+            onChange={(e) => setCrop(e.target.value)}
+            style={{
+              ...inputStyle,
+              cursor: 'pointer',
+            }}
+          >
+            {predictCrops.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label style={labelStyle}>
             Growing-season rainfall (mm)
@@ -247,7 +294,7 @@ export default function PredictionCard() {
             boxShadow: '0 0 15px rgba(0,255,136,0.35)',
           }}
         >
-          {loading ? 'Predicting...' : 'Predict Yield'}
+          {loading ? 'Predicting...' : `Predict ${selectedCrop.label} Yield`}
         </button>
       </form>
 
@@ -275,16 +322,28 @@ export default function PredictionCard() {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '4px' }}>
-            PREDICTED YIELD
+          <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '4px', textTransform: 'uppercase' }}>
+            Predicted {result.crop} yield
           </div>
           <div style={{ fontSize: '36px', fontWeight: 700, lineHeight: 1 }}>
-            {result.predicted_yield_t_ha.toFixed(2)} t/ha
+            {result.predicted_yield_t_ha.toFixed(2)} {result.unit}
           </div>
           <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '8px' }}>
             Confidence range: {result.confidence_range.low.toFixed(2)} –{' '}
-            {result.confidence_range.high.toFixed(2)} t/ha
+            {result.confidence_range.high.toFixed(2)} {result.unit}
           </div>
+          {result.type && (
+            <div
+              style={{
+                fontSize: '11px',
+                opacity: 0.75,
+                marginTop: '6px',
+                textTransform: 'capitalize',
+              }}
+            >
+              Model: {result.type}
+            </div>
+          )}
         </div>
       )}
     </div>
