@@ -149,19 +149,12 @@ async function fetchTerrain(
 
     if (elevation === null) return null
 
-    // Classify relief zone based on Zimbabwe standards
-    // Source: FAO Chapter 10 — Lowveld (<900m), Middleveld (900-1200m),
-    // Highveld (1200-2000m), Eastern Highlands (2000-2400m)
     let reliefZone = 'Unknown'
     if (elevation < 900) reliefZone = 'Lowveld'
     else if (elevation < 1200) reliefZone = 'Middleveld'
     else if (elevation < 2000) reliefZone = 'Highveld'
     else reliefZone = 'Eastern Highlands'
 
-    // Slope classification reference (FAO):
-    // 0-2% very flat, 2-5% flat, 5-10% moderate, 10-25% steep
-    // We estimate slope class heuristically based on relief zone
-    // (actual slope requires multi-point sampling)
     let slopeClass = 'Gentle (0–2%)'
     let slopeAdvice =
       'Terrain is very flat. Excellent for mechanised farming, irrigation, and all crop types.'
@@ -169,15 +162,15 @@ async function fetchTerrain(
     if (reliefZone === 'Middleveld') {
       slopeClass = 'Flat to Moderate (2–5%)'
       slopeAdvice =
-        'Gentle slopes. Suitable for most crops. Consider contour ploughing on sloping portions to reduce soil erosion.'
+        'Gentle slopes. Suitable for most crops. Consider contour ploughing on sloping portions.'
     } else if (reliefZone === 'Highveld') {
       slopeClass = 'Moderate (5–10%)'
       slopeAdvice =
-        'Moderate slopes. Contour ploughing and conservation agriculture recommended. Maize and legumes grow well. Avoid steep areas for row crops.'
+        'Moderate slopes. Contour ploughing and conservation agriculture recommended.'
     } else if (reliefZone === 'Eastern Highlands') {
       slopeClass = 'Steep (>10%)'
       slopeAdvice =
-        'Steep terrain. Best for forestry, tea, and orchards. Row cropping is risky due to erosion. Use terracing if cultivating.'
+        'Steep terrain. Best for forestry, tea, and orchards. Row cropping is risky.'
     }
 
     return { elevation, reliefZone, slopeClass, slopeAdvice }
@@ -252,7 +245,15 @@ export default function CropAdvisor() {
   const region = getNaturalRegion(zone)
   const effectiveRainfall = simulator ?? seasonalRainfall ?? 0
 
-  const recommended = getCropAdvice(effectiveRainfall, droughtStatus, zone)
+  // Dynamically derive drought status from the effective rainfall for simulation
+  const effectiveDroughtStatus =
+    effectiveRainfall < 250 ? 'drought' : droughtStatus
+
+  const recommended = getCropAdvice(
+    effectiveRainfall,
+    effectiveDroughtStatus,
+    zone
+  )
 
   const fallbackCrops: CropRequirement[] =
     recommended.length === 0
@@ -279,7 +280,7 @@ export default function CropAdvisor() {
     )
   }
 
-  const isDrought = droughtStatus === 'drought' || droughtStatus === 'extreme-drought'
+  const isDrought = effectiveDroughtStatus === 'drought'
   const daysAvailable = outlook?.daysAvailable ?? 90
   const monthlyRain = outlook?.monthly.map((m) => m.rainMm) ?? []
 
@@ -289,7 +290,31 @@ export default function CropAdvisor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Terrain / Elevation card */}
+      {/* Blinking footnote styles */}
+      <style>{`
+        @keyframes footnoteBlink {
+          0%, 100% {
+            opacity: 1;
+            text-shadow:
+              0 0 2px #ffffff,
+              0 0 6px #ffffff,
+              0 1px 0 rgba(0,0,0,0.85);
+          }
+          50% {
+            opacity: 0.65;
+            text-shadow:
+              0 0 4px #ffffff,
+              0 0 10px #ffffff,
+              0 0 18px rgba(255,255,255,0.7),
+              0 1px 0 rgba(0,0,0,0.85);
+          }
+        }
+        .blinking-footnote {
+          animation: footnoteBlink 2.2s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Terrain card */}
       {terrain && (
         <div
           style={{
@@ -650,7 +675,7 @@ export default function CropAdvisor() {
         </div>
       )}
 
-      {/* Irrigation Advisory Banner */}
+      {/* Irrigation Advisory */}
       {needsIrrigation && (
         <div
           style={{
@@ -679,21 +704,7 @@ export default function CropAdvisor() {
             }}
           >
             Dry spells or low-rainfall conditions are expected during the season.
-            Supplementary irrigation is recommended for the crops below to protect
-            flowering and grain filling stages.
-          </p>
-          <p
-            style={{
-              fontSize: '12px',
-              color: '#334155',
-              margin: '8px 0 0 0',
-              lineHeight: 1.6,
-              fontStyle: 'italic',
-            }}
-          >
-            ℹ️ Peak water requirement varies by crop — see the water note inside each
-            crop card. On sandy soils, water drains faster and you may need to
-            irrigate more frequently but with less water per application.
+            Supplementary irrigation is recommended for the crops below.
           </p>
         </div>
       )}
@@ -982,13 +993,12 @@ export default function CropAdvisor() {
             }}
           >
             ⚠️ <strong>Drought conditions detected.</strong> Below-average rainfall
-            expected. Planting maize is risky. The crops below are more likely to
-            succeed under these conditions.
+            expected. Only drought-tolerant crops are shown.
           </div>
         )}
       </div>
 
-      {/* Recommended with varieties and irrigation */}
+      {/* Recommended */}
       <div style={cardStyle}>
         <h3
           style={{
@@ -1003,9 +1013,8 @@ export default function CropAdvisor() {
           {displayedRecommended.length})
         </h3>
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
-          {usingFallback
-            ? 'No crops match your region and rainfall exactly. These drought-tolerant alternatives are the safest options.'
-            : 'Click any crop to see matching varieties, irrigation advice, and step-by-step guidance'}
+          Click any crop to see matching varieties, irrigation advice, and step-by-step
+          guidance
         </p>
 
         <div
@@ -1032,6 +1041,7 @@ export default function CropAdvisor() {
         </div>
       </div>
 
+      {/* Not recommended */}
       {notRecommended.length > 0 && (
         <div style={cardStyle}>
           <h3
@@ -1077,19 +1087,23 @@ export default function CropAdvisor() {
         </div>
       )}
 
+      {/* Blinking footnote with white text shadow */}
       <p
+        className="blinking-footnote"
         style={{
-          fontSize: '11px',
-          color: '#475569',
+          fontSize: '12px',
+          color: '#0f172a',
           textAlign: 'center',
           fontStyle: 'italic',
           margin: 0,
+          fontWeight: 600,
+          letterSpacing: '0.3px',
         }}
       >
         Advisory based on Zimbabwe Natural Regions (NR I–V), FAO crop water
-        requirements, ECMWF SEAS5 seasonal forecasts, Copernicus DEM terrain data,
-        and variety maturity data from Seed Co, DR&SS and ICRISAT. Sources:
-        Farmonaut (2026), AGRITEX Zimbabwe, MSD Zimbabwe.
+        requirements, ECMWF SEAS5 seasonal forecasts, Copernicus DEM terrain data, and
+        variety maturity data from Seed Co, DR&SS and ICRISAT. Sources: Farmonaut
+        (2026), AGRITEX Zimbabwe, MSD Zimbabwe.
       </p>
     </div>
   )
@@ -1123,266 +1137,4 @@ function CropCard({
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.25)',
-        borderRadius: '12px',
-        border: '1px solid rgba(0,255,136,0.25)',
-        overflow: 'hidden',
-      }}
-    >
-      <button
-        onClick={onToggle}
-        style={{
-          width: '100%',
-          padding: '14px',
-          background: 'transparent',
-          border: 'none',
-          textAlign: 'left',
-          cursor: 'pointer',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              color: '#0f3d20',
-            }}
-          >
-            {crop.name}
-          </div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#334155',
-              marginTop: '4px',
-            }}
-          >
-            Needs {crop.minRainfall}–{crop.maxRainfall} mm ·{' '}
-            {matchingVarieties.length} matching varieties
-          </div>
-          <div
-            style={{
-              fontSize: '10px',
-              marginTop: '6px',
-              color: toleranceColor[crop.droughtTolerance],
-              fontWeight: 700,
-              textTransform: 'uppercase',
-            }}
-          >
-            Drought tolerance: {crop.droughtTolerance}
-          </div>
-        </div>
-        <span style={{ fontSize: '18px', color: '#16803c' }}>
-          {isOpen ? '−' : '+'}
-        </span>
-      </button>
-
-      {isOpen && (
-        <div
-          style={{
-            padding: '0 14px 14px 14px',
-            borderTop: '1px solid rgba(0,255,136,0.15)',
-          }}
-        >
-          <p
-            style={{
-              fontSize: '12px',
-              color: '#334155',
-              lineHeight: 1.6,
-              marginTop: '10px',
-              fontStyle: 'italic',
-            }}
-          >
-            {crop.description}
-          </p>
-
-          <div
-            style={{
-              marginTop: '12px',
-              background: irrigation.needed
-                ? 'rgba(14,165,233,0.12)'
-                : 'rgba(0,255,136,0.08)',
-              border: irrigation.needed
-                ? '1px solid rgba(14,165,233,0.40)'
-                : '1px solid rgba(0,255,136,0.30)',
-              padding: '10px 12px',
-              borderRadius: '10px',
-            }}
-          >
-            <p
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: irrigation.needed ? '#0c4a6e' : '#0f3d20',
-                margin: 0,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}
-            >
-              💧 Water requirement
-            </p>
-            <p
-              style={{
-                fontSize: '12px',
-                color: '#1f2937',
-                margin: '6px 0 0 0',
-                lineHeight: 1.6,
-              }}
-            >
-              {irrigation.message}
-            </p>
-          </div>
-
-          {matchingVarieties.length > 0 && (
-            <>
-              <h4
-                style={{
-                  fontSize: '12px',
-                  color: '#0f3d20',
-                  margin: '14px 0 8px 0',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                🌱 Varieties that fit your {daysAvailable}-day window
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {matchingVarieties.map((v) => (
-                  <div
-                    key={v.name}
-                    style={{
-                      background: 'rgba(0,255,136,0.10)',
-                      border: '1px solid rgba(0,255,136,0.35)',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        color: '#0f3d20',
-                      }}
-                    >
-                      {v.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#334155',
-                        marginTop: '2px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {v.maturityDays} days · {v.maturityClass} · drought tolerance:{' '}
-                      {v.droughtTolerance}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#1f2937',
-                        marginTop: '6px',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {v.note}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#16803c',
-                        marginTop: '4px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      Yield potential: {v.yieldPotential}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {matchingVarieties.length === 0 && crop.varieties.length > 0 && (
-            <div
-              style={{
-                marginTop: '12px',
-                background: 'rgba(220,38,38,0.10)',
-                border: '1px solid rgba(220,38,38,0.35)',
-                padding: '10px 12px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                color: '#7f1d1d',
-                lineHeight: 1.6,
-              }}
-            >
-              ⚠️ None of the listed varieties fit in a {daysAvailable}-day growing
-              window. Consider earlier-maturing alternatives or irrigation.
-            </div>
-          )}
-
-          {crop.varieties.length === 0 && (
-            <div
-              style={{
-                marginTop: '12px',
-                background: 'rgba(255,248,225,0.75)',
-                padding: '10px 12px',
-                borderRadius: '10px',
-                fontSize: '12px',
-                color: '#7a4a1f',
-                lineHeight: 1.6,
-              }}
-            >
-              ℹ️ Variety data not yet available for this crop. Consult your local
-              AGRITEX officer for recommended varieties.
-            </div>
-          )}
-
-          <h4
-            style={{
-              fontSize: '12px',
-              color: '#0f3d20',
-              margin: '14px 0 8px 0',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}
-          >
-            Step-by-step growing guide
-          </h4>
-
-          <ol
-            style={{
-              fontSize: '12px',
-              color: '#1f2937',
-              lineHeight: 1.8,
-              paddingLeft: '20px',
-              margin: 0,
-            }}
-          >
-            {crop.plantingSteps.map((step, i) => (
-              <li key={i} style={{ marginBottom: '4px' }}>
-                {step}
-              </li>
-            ))}
-          </ol>
-
-          <div
-            style={{
-              marginTop: '12px',
-              fontSize: '11px',
-              color: '#16803c',
-              fontWeight: 600,
-            }}
-          >
-            Best regions: {crop.bestRegions.join(', ')}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        background: 'rgba(255,255,255,0.
