@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getSavedLocation, District, districts } from './locationData'
 
 const API_URL = 'https://zimbabwe-farm-ml-api.onrender.com/predict'
 
 export default function PredictionCard() {
+  const [location, setLocation] = useState<District>(districts[0])
   const [rainfall, setRainfall] = useState('700')
   const [temperature, setTemperature] = useState('24')
   const [fertilizer, setFertilizer] = useState('60')
+  const [autoFilled, setAutoFilled] = useState(false)
+  const [loadingWeather, setLoadingWeather] = useState(false)
 
   const [result, setResult] = useState<null | {
     predicted_yield_t_ha: number
@@ -15,6 +19,61 @@ export default function PredictionCard() {
   }>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Track location changes
+  useEffect(() => {
+    const saved = getSavedLocation()
+    if (saved) setLocation(saved)
+
+    const onLocationChange = () => {
+      const updated = getSavedLocation()
+      if (updated) setLocation(updated)
+    }
+    window.addEventListener('locationChanged', onLocationChange)
+    window.addEventListener('storage', onLocationChange)
+    return () => {
+      window.removeEventListener('locationChanged', onLocationChange)
+      window.removeEventListener('storage', onLocationChange)
+    }
+  }, [])
+
+  // Auto-fill rainfall and temperature from weather API
+  useEffect(() => {
+    setLoadingWeather(true)
+    setAutoFilled(false)
+
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
+      '&current=temperature_2m' +
+      '&daily=precipitation_sum' +
+      '&past_days=30&forecast_days=7' +
+      '&timezone=Africa/Harare'
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        // Temperature: use current
+        const currentTemp = data.current?.temperature_2m
+        if (currentTemp != null) {
+          setTemperature(Math.round(currentTemp).toString())
+        }
+
+        // Rainfall: estimate seasonal from past 30 days × 5
+        const arr: number[] = data.daily?.precipitation_sum ?? []
+        const past30 = arr.slice(0, 30)
+        const total30 = past30.reduce((s, v) => s + (v || 0), 0)
+        const seasonal = Math.round(total30 * 5)
+        if (seasonal > 0) {
+          setRainfall(seasonal.toString())
+        }
+
+        setAutoFilled(true)
+      })
+      .catch(() => {
+        /* silent */
+      })
+      .finally(() => setLoadingWeather(false))
+  }, [location])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +86,7 @@ export default function PredictionCard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          crop: 'maize',
           rainfall: parseFloat(rainfall),
           temperature: parseFloat(temperature),
           fertilizer: parseFloat(fertilizer),
@@ -40,12 +100,10 @@ export default function PredictionCard() {
           predicted_yield_t_ha: data.predicted_yield_t_ha,
           confidence_range: data.confidence_range,
         })
-        // Save to localStorage so the top stat card can show it
         localStorage.setItem(
           'latestPrediction',
           data.predicted_yield_t_ha.toString()
         )
-        // Dispatch event so StatCards updates immediately
         window.dispatchEvent(new Event('predictionUpdated'))
       } else {
         setError(data.error || 'Prediction failed')
@@ -102,7 +160,7 @@ export default function PredictionCard() {
           🤖 Maize Yield Prediction
         </h2>
         <p style={{ fontSize: '12px', color: '#334155', margin: '2px 0 0 0' }}>
-          Random Forest model — powered by your Python API
+          Auto-filled from {location.name} weather · Random Forest model
         </p>
       </div>
 
@@ -116,7 +174,19 @@ export default function PredictionCard() {
         }}
       >
         <div>
-          <label style={labelStyle}>Growing-season rainfall (mm)</label>
+          <label style={labelStyle}>
+            Growing-season rainfall (mm)
+            {loadingWeather && (
+              <span style={{ color: '#16803c', marginLeft: '6px', fontSize: '11px' }}>
+                (loading...)
+              </span>
+            )}
+            {autoFilled && !loadingWeather && (
+              <span style={{ color: '#16803c', marginLeft: '6px', fontSize: '11px' }}>
+                ✓ auto-filled
+              </span>
+            )}
+          </label>
           <input
             type="number"
             value={rainfall}
@@ -129,7 +199,14 @@ export default function PredictionCard() {
         </div>
 
         <div>
-          <label style={labelStyle}>Mean temperature (°C)</label>
+          <label style={labelStyle}>
+            Mean temperature (°C)
+            {autoFilled && !loadingWeather && (
+              <span style={{ color: '#16803c', marginLeft: '6px', fontSize: '11px' }}>
+                ✓ auto-filled
+              </span>
+            )}
+          </label>
           <input
             type="number"
             value={temperature}
