@@ -29,7 +29,6 @@ export default function CropAdvisor() {
   const [openCrop, setOpenCrop] = useState<string | null>(null)
   const [simulator, setSimulator] = useState<number | null>(null)
 
-  // Track location changes
   useEffect(() => {
     const saved = getSavedLocation()
     if (saved) setLocation(saved)
@@ -46,7 +45,6 @@ export default function CropAdvisor() {
     }
   }, [])
 
-  // Fetch live weather for the location
   useEffect(() => {
     setLoading(true)
     setSimulator(null)
@@ -95,7 +93,6 @@ export default function CropAdvisor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Header + summary */}
       <div style={cardStyle}>
         <h2
           style={{
@@ -112,7 +109,6 @@ export default function CropAdvisor() {
           Based on recent rainfall patterns and agro-ecological zone {zone}
         </p>
 
-        {/* Natural Region card */}
         <div
           style={{
             marginTop: '14px',
@@ -200,7 +196,6 @@ export default function CropAdvisor() {
           </p>
         </div>
 
-        {/* Numbers */}
         <div
           style={{
             display: 'grid',
@@ -300,7 +295,6 @@ export default function CropAdvisor() {
           </div>
         </div>
 
-        {/* Simulator for testing / demonstration */}
         <div
           style={{
             marginTop: '16px',
@@ -387,7 +381,6 @@ export default function CropAdvisor() {
         )}
       </div>
 
-      {/* Recommended */}
       <div style={cardStyle}>
         <h3
           style={{
@@ -432,7 +425,6 @@ export default function CropAdvisor() {
         </div>
       </div>
 
-      {/* Not recommended */}
       {notRecommended.length > 0 && (
         <div style={cardStyle}>
           <h3
