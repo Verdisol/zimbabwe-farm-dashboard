@@ -6,6 +6,7 @@ import {
   crops,
   getCropAdvice,
   getZoneFromLocation,
+  getNaturalRegion,
   CropRequirement,
 } from './cropData'
 
@@ -73,8 +74,9 @@ export default function CropAdvisor() {
   }, [location])
 
   const zone = getZoneFromLocation(location.name)
+  const region = getNaturalRegion(zone)
   const effectiveRainfall = simulator ?? seasonalRainfall ?? 0
-  const recommended = getCropAdvice(effectiveRainfall, droughtStatus)
+  const recommended = getCropAdvice(effectiveRainfall, droughtStatus, zone)
   const notRecommended = crops.filter(
     (c) => !recommended.find((r) => r.name === c.name)
   )
@@ -110,6 +112,95 @@ export default function CropAdvisor() {
           Based on recent rainfall patterns and agro-ecological zone {zone}
         </p>
 
+        {/* Natural Region card */}
+        <div
+          style={{
+            marginTop: '14px',
+            background: 'rgba(0,255,136,0.10)',
+            border: '1px solid rgba(0,255,136,0.35)',
+            padding: '14px',
+            borderRadius: '12px',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '11px',
+              color: '#0f3d20',
+              margin: 0,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            {region.name} · Zimbabwe Agro-Ecological Zone
+          </p>
+          <p
+            style={{
+              fontSize: '13px',
+              color: '#1f2937',
+              margin: '6px 0 0 0',
+              fontWeight: 600,
+            }}
+          >
+            Annual rainfall: {region.rainfall}
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#334155',
+              margin: '4px 0 0 0',
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>Soils:</strong> {region.soils}
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#334155',
+              margin: '2px 0 0 0',
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>Main crops:</strong> {region.mainCrops}
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#334155',
+              margin: '2px 0 0 0',
+              lineHeight: 1.6,
+            }}
+          >
+            <strong>Climate resilience:</strong>{' '}
+            <span
+              style={{
+                color:
+                  region.resilience === 'High'
+                    ? '#16803c'
+                    : region.resilience === 'Medium'
+                    ? '#f59e0b'
+                    : '#dc2626',
+                fontWeight: 700,
+              }}
+            >
+              {region.resilience}
+            </span>
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#475569',
+              margin: '8px 0 0 0',
+              lineHeight: 1.6,
+              fontStyle: 'italic',
+            }}
+          >
+            {region.description}
+          </p>
+        </div>
+
+        {/* Numbers */}
         <div
           style={{
             display: 'grid',
@@ -194,7 +285,7 @@ export default function CropAdvisor() {
                 textTransform: 'uppercase',
               }}
             >
-              Agro-zone
+              Natural Region
             </p>
             <p
               style={{
@@ -397,8 +488,9 @@ export default function CropAdvisor() {
           margin: 0,
         }}
       >
-        Advisory based on FAO crop water requirements and Zimbabwe agro-ecological
-        zone classifications (AGRITEX). Always consult your local extension officer.
+        Advisory based on Zimbabwe Natural Regions (NR I–V) and FAO crop water
+        requirements. Sources: Farmonaut (2026) Natural Farming Regions in Zimbabwe
+        Guide; AGRITEX Zimbabwe.
       </p>
     </div>
   )
@@ -535,7 +627,7 @@ function CropCard({
               fontWeight: 600,
             }}
           >
-            Best zones: {crop.bestZones.join(', ')}
+            Best regions: {crop.bestRegions.join(', ')}
           </div>
         </div>
       )}
