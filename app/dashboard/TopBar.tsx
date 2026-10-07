@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import PriceTicker from './PriceTicker'
+import ExportButton from './ExportButton'
 import {
   Language,
   languages,
@@ -14,10 +15,8 @@ export default function TopBar() {
   const [language, setLanguage] = useState<Language>('en')
 
   useEffect(() => {
-    // Load saved language
     setLanguage(getSavedLanguage())
 
-    // Save the farmer's email so the subscription page can look up their status
     const savedEmail = localStorage.getItem('farmerEmail')
     if (!savedEmail) {
       const url = new URL(window.location.href)
@@ -27,7 +26,6 @@ export default function TopBar() {
       }
     }
 
-    // Inject pulse keyframes once
     if (document.getElementById('topbar-pulse')) return
     const style = document.createElement('style')
     style.id = 'topbar-pulse'
@@ -102,6 +100,8 @@ export default function TopBar() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <ExportButton targetId="export-area" label="Export PDF" />
+
           <select
             value={language}
             onChange={(e) => handleLanguageChange(e.target.value as Language)}
