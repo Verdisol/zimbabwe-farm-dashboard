@@ -4,6 +4,7 @@ export type TabKey =
   | 'overview'
   | 'map'
   | 'weather'
+  | 'drought'
   | 'predictions'
   | 'charts'
   | 'market'
@@ -15,6 +16,7 @@ const navItems: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
   { key: 'weather', label: 'Weather' },
+  { key: 'drought', label: 'Drought Monitor' },
   { key: 'predictions', label: 'Predictions' },
   { key: 'charts', label: 'Charts' },
   { key: 'market', label: 'Market' },
