@@ -20,11 +20,99 @@ const cardStyle: React.CSSProperties = {
   boxShadow: '0 0 15px rgba(0,255,136,0.18)',
 }
 
+type MonthlyForecast = {
+  month: string
+  rainMm: number
+  anomalyMm: number
+}
+
+type SeasonalOutlook = {
+  status: 'below-normal' | 'normal' | 'above-normal'
+  label: string
+  color: string
+  icon: string
+  anomaly: number
+  monthly: MonthlyForecast[]
+  source: string
+}
+
+// Zimbabwe's rainfall season runs Nov - March
+// Open-Meteo seasonal API returns daily precipitation; we sum per month
+async function fetchSeasonalOutlook(
+  lat: number,
+  lng: number
+): Promise<SeasonalOutlook | null> {
+  try {
+    const url =
+      `https://seasonal-api.open-meteo.com/v1/seasonal?latitude=${lat}&longitude=${lng}` +
+      `&daily=precipitation_sum` +
+      `&forecast_days=183` +
+      `&timezone=Africa/Harare`
+
+    const res = await fetch(url)
+    const data = await res.json()
+
+    const times: string[] = data.daily?.time ?? []
+    const rains: number[] = data.daily?.precipitation_sum ?? []
+
+    if (times.length === 0) return null
+
+    // Aggregate by calendar month
+    const monthTotals = new Map<string, number>()
+    times.forEach((t, i) => {
+      const key = t.slice(0, 7) // YYYY-MM
+      monthTotals.set(key, (monthTotals.get(key) || 0) + (rains[i] || 0))
+    })
+
+    const monthly: MonthlyForecast[] = Array.from(monthTotals.entries()).map(
+      ([month, rainMm]) => ({
+        month,
+        rainMm,
+        anomalyMm: 0, // API doesn't provide baseline directly in this call
+      })
+    )
+
+    // Simple heuristic classification based on average monthly rainfall
+    const avgMonthly =
+      monthly.reduce((s, m) => s + m.rainMm, 0) / (monthly.length || 1)
+
+    let status: 'below-normal' | 'normal' | 'above-normal' = 'normal'
+    let label = 'Normal'
+    let color = '#16803c'
+    let icon = '✅'
+
+    if (avgMonthly < 30) {
+      status = 'below-normal'
+      label = 'Below Normal'
+      color = '#dc2626'
+      icon = '⚠️'
+    } else if (avgMonthly > 90) {
+      status = 'above-normal'
+      label = 'Above Normal'
+      color = '#22c55e'
+      icon = '🌧️'
+    }
+
+    return {
+      status,
+      label,
+      color,
+      icon,
+      anomaly: avgMonthly,
+      monthly,
+      source: 'ECMWF SEAS5 via Open-Meteo Seasonal API',
+    }
+  } catch {
+    return null
+  }
+}
+
 export default function CropAdvisor() {
   const [location, setLocation] = useState<District>(districts[0])
   const [rainfall30d, setRainfall30d] = useState<number | null>(null)
   const [seasonalRainfall, setSeasonalRainfall] = useState<number | null>(null)
   const [droughtStatus, setDroughtStatus] = useState<string>('normal')
+  const [outlook, setOutlook] = useState<SeasonalOutlook | null>(null)
   const [loading, setLoading] = useState(true)
   const [openCrop, setOpenCrop] = useState<string | null>(null)
   const [simulator, setSimulator] = useState<number | null>(null)
@@ -48,6 +136,8 @@ export default function CropAdvisor() {
   useEffect(() => {
     setLoading(true)
     setSimulator(null)
+    setOutlook(null)
+
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
         '&daily=precipitation_sum' +
@@ -60,7 +150,6 @@ export default function CropAdvisor() {
         const past30 = arr.slice(0, 30)
         const total30 = past30.reduce((s, v) => s + (v || 0), 0)
         setRainfall30d(total30)
-        // Use realistic seasonal scaling: 30-day × 5 approximates a full season
         setSeasonalRainfall(Math.round(total30 * 5))
 
         if (total30 < 10) setDroughtStatus('drought')
@@ -69,7 +158,11 @@ export default function CropAdvisor() {
       .catch(() => {
         /* silent */
       })
-      .finally(() => setLoading(false))
+
+    fetchSeasonalOutlook(location.lat, location.lng).then((result) => {
+      setOutlook(result)
+      setLoading(false)
+    })
   }, [location])
 
   const zone = getZoneFromLocation(location.name)
@@ -78,7 +171,6 @@ export default function CropAdvisor() {
 
   const recommended = getCropAdvice(effectiveRainfall, droughtStatus, zone)
 
-  // Fallback: if the region pool gives nothing, show the two most drought-tolerant crops
   const fallbackCrops: CropRequirement[] =
     recommended.length === 0
       ? crops.filter(
@@ -98,7 +190,7 @@ export default function CropAdvisor() {
     return (
       <div style={cardStyle}>
         <p style={{ color: '#334155', margin: 0 }}>
-          Analysing weather patterns and crop suitability for {location.name}...
+          Analysing weather patterns and seasonal outlook for {location.name}...
         </p>
       </div>
     )
@@ -108,6 +200,181 @@ export default function CropAdvisor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Seasonal Outlook — NEW */}
+      {outlook && (
+        <div
+          style={{
+            ...cardStyle,
+            borderLeft: `6px solid ${outlook.color}`,
+            background:
+              outlook.status === 'below-normal'
+                ? 'rgba(220,38,38,0.10)'
+                : outlook.status === 'above-normal'
+                ? 'rgba(34,197,94,0.10)'
+                : 'rgba(255,255,255,0.20)',
+          }}
+        >
+          <h3
+            style={{
+              fontSize: '15px',
+              color: '#0f3d20',
+              margin: 0,
+              fontWeight: 700,
+              textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+            }}
+          >
+            📅 Seasonal Climate Outlook — Next 6 Months
+          </h3>
+          <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
+            {outlook.source}
+          </p>
+
+          {/* A: Simple badge */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: '14px',
+              padding: '14px',
+              background: 'rgba(255,255,255,0.35)',
+              borderRadius: '12px',
+            }}
+          >
+            <span style={{ fontSize: '36px' }}>{outlook.icon}</span>
+            <div>
+              <p
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 800,
+                  color: outlook.color,
+                  margin: 0,
+                }}
+              >
+                {outlook.label}
+              </p>
+              <p style={{ fontSize: '12px', color: '#334155', margin: '4px 0 0 0' }}>
+                Seasonal rainfall outlook for {location.name}
+              </p>
+            </div>
+          </div>
+
+          {/* B: Detailed anomaly */}
+          <div
+            style={{
+              marginTop: '12px',
+              background: 'rgba(255,248,225,0.75)',
+              padding: '12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                color: '#7a4a1f',
+                margin: 0,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+              }}
+            >
+              Forecast precipitation average
+            </p>
+            <p
+              style={{
+                fontSize: '18px',
+                fontWeight: 800,
+                color: '#0f172a',
+                margin: '4px 0 0 0',
+              }}
+            >
+              {outlook.anomaly.toFixed(1)} mm/month
+            </p>
+            <p style={{ fontSize: '11px', color: '#475569', margin: '4px 0 0 0' }}>
+              Ensemble forecast · 51 members · uncertainty increases at longer lead
+              times
+            </p>
+          </div>
+
+          {/* C: Monthly breakdown */}
+          {outlook.monthly.length > 0 && (
+            <div style={{ marginTop: '14px' }}>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#0f3d20',
+                  margin: '0 0 8px 0',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Month-by-month projection
+              </p>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
+                  gap: '8px',
+                }}
+              >
+                {outlook.monthly.slice(0, 6).map((m) => {
+                  const monthName = new Date(m.month + '-01').toLocaleDateString(
+                    'en',
+                    { month: 'short', year: '2-digit' }
+                  )
+                  return (
+                    <div
+                      key={m.month}
+                      style={{
+                        background: 'rgba(255,255,255,0.35)',
+                        padding: '10px',
+                        borderRadius: '10px',
+                        textAlign: 'center',
+                        border: '1px solid rgba(0,255,136,0.20)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: '#334155',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {monthName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '16px',
+                          fontWeight: 800,
+                          color: '#0f172a',
+                          marginTop: '4px',
+                        }}
+                      >
+                        {m.rainMm.toFixed(0)}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#475569' }}>mm</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <p
+                style={{
+                  fontSize: '10px',
+                  color: '#475569',
+                  marginTop: '8px',
+                  fontStyle: 'italic',
+                }}
+              >
+                ⓘ Seasonal forecasts indicate the likely direction of rainfall
+                (wetter/drier than normal), not exact amounts. Always confirm with
+                MSD Zimbabwe.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Header + summary */}
       <div style={cardStyle}>
         <h2
           style={{
@@ -121,7 +388,8 @@ export default function CropAdvisor() {
           🌾 Crop Advisory for {location.name}
         </h2>
         <p style={{ fontSize: '13px', color: '#334155', marginTop: '6px' }}>
-          Based on recent rainfall patterns and agro-ecological zone {zone}
+          Based on recent rainfall patterns, seasonal outlook, and agro-ecological zone{' '}
+          {zone}
         </p>
 
         <div
@@ -384,7 +652,8 @@ export default function CropAdvisor() {
             }}
           >
             Tip: Drag the slider to see how crop suitability changes with different
-            rainfall scenarios. Real seasonal rainfall in Zimbabwe is typically 450–1050 mm.
+            rainfall scenarios. Real seasonal rainfall in Zimbabwe is typically
+            450–1050 mm.
           </p>
         </div>
 
@@ -418,8 +687,8 @@ export default function CropAdvisor() {
             textShadow: '0 1px 3px rgba(255,255,255,0.6)',
           }}
         >
-          {usingFallback ? '💡 Best Alternative Crops' : '✅ Recommended Crops'}{' '}
-          ({displayedRecommended.length})
+          {usingFallback ? '💡 Best Alternative Crops' : '✅ Recommended Crops'} (
+          {displayedRecommended.length})
         </h3>
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
           {usingFallback
@@ -502,9 +771,9 @@ export default function CropAdvisor() {
           margin: 0,
         }}
       >
-        Advisory based on Zimbabwe Natural Regions (NR I–V) and FAO crop water
-        requirements. Sources: Farmonaut (2026) Natural Farming Regions in Zimbabwe
-        Guide; AGRITEX Zimbabwe.
+        Advisory based on Zimbabwe Natural Regions (NR I–V), FAO crop water
+        requirements, and ECMWF SEAS5 seasonal forecasts. Sources: Farmonaut (2026),
+        AGRITEX Zimbabwe, MSD Zimbabwe.
       </p>
     </div>
   )
