@@ -13,6 +13,7 @@ import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
 import LocationPicker from './LocationPicker'
+import CropAdvisor from './CropAdvisor'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
@@ -217,7 +218,10 @@ function DroughtTab({ language }: { language: Language }) {
         subtitle={t(language, 'tab_drought_sub')}
       />
       <LocationPicker />
-      <DroughtMonitor />
+      <div style={{ marginBottom: '16px' }}>
+        <DroughtMonitor />
+      </div>
+      <CropAdvisor />
     </>
   )
 }
