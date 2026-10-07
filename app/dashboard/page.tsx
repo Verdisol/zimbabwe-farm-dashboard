@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
-import PriceTicker from './PriceTicker'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
+import DroughtMonitor from './DroughtMonitor'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 import Market from './Market'
@@ -60,12 +60,11 @@ export default function DashboardPage() {
       >
         <TopBar />
 
-        <PriceTicker />
-
         <main style={{ padding: '24px', flex: 1 }}>
           {activeTab === 'overview' && <OverviewTab />}
           {activeTab === 'map' && <MapTab />}
           {activeTab === 'weather' && <WeatherTab />}
+          {activeTab === 'drought' && <DroughtTab />}
           {activeTab === 'predictions' && <PredictionsTab />}
           {activeTab === 'charts' && <ChartsTab />}
           {activeTab === 'market' && <MarketTab />}
@@ -186,6 +185,19 @@ function WeatherTab() {
       <GlowWrapper>
         <WeatherCard />
       </GlowWrapper>
+    </>
+  )
+}
+
+function DroughtTab() {
+  return (
+    <>
+      <SectionHeading
+        title="Drought Monitor"
+        subtitle="Live drought and bumper harvest status for your district"
+      />
+      <LocationPicker />
+      <DroughtMonitor />
     </>
   )
 }
