@@ -2,11 +2,32 @@
 
 import { useState, useEffect } from 'react'
 import PriceTicker from './PriceTicker'
+import {
+  Language,
+  languages,
+  getSavedLanguage,
+  saveLanguage,
+  t,
+} from './translations'
 
 export default function TopBar() {
-  const [language, setLanguage] = useState('en')
+  const [language, setLanguage] = useState<Language>('en')
 
   useEffect(() => {
+    // Load saved language
+    setLanguage(getSavedLanguage())
+
+    // Save the farmer's email so the subscription page can look up their status
+    const savedEmail = localStorage.getItem('farmerEmail')
+    if (!savedEmail) {
+      const url = new URL(window.location.href)
+      const email = url.searchParams.get('email')
+      if (email) {
+        localStorage.setItem('farmerEmail', email)
+      }
+    }
+
+    // Inject pulse keyframes once
     if (document.getElementById('topbar-pulse')) return
     const style = document.createElement('style')
     style.id = 'topbar-pulse'
@@ -23,6 +44,11 @@ export default function TopBar() {
     document.head.appendChild(style)
   }, [])
 
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang)
+    saveLanguage(lang)
+  }
+
   return (
     <div
       style={{
@@ -31,7 +57,6 @@ export default function TopBar() {
         zIndex: 20,
       }}
     >
-      {/* The main header bar */}
       <header
         style={{
           background:
@@ -61,7 +86,7 @@ export default function TopBar() {
               letterSpacing: '0.3px',
             }}
           >
-            Welcome back, Farmer
+            {t(language, 'topbar_welcome')}
           </h1>
           <p
             style={{
@@ -72,14 +97,14 @@ export default function TopBar() {
                 '0 1px 0 rgba(0,0,0,0.9), 0 2px 5px rgba(0,0,0,0.85), 0 4px 10px rgba(0,0,0,0.7)',
             }}
           >
-            Your farm at a glance
+            {t(language, 'topbar_subtitle')}
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => handleLanguageChange(e.target.value as Language)}
             style={{
               padding: '10px 16px',
               borderRadius: '10px',
@@ -93,9 +118,11 @@ export default function TopBar() {
               boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
             }}
           >
-            <option value="en">English</option>
-            <option value="sn">Shona</option>
-            <option value="nd">Ndebele</option>
+            {languages.map((l) => (
+              <option key={l.key} value={l.key}>
+                {l.label}
+              </option>
+            ))}
           </select>
 
           <div
@@ -119,7 +146,6 @@ export default function TopBar() {
         </div>
       </header>
 
-      {/* PriceTicker — glued right under the header, always visible */}
       <PriceTicker />
     </div>
   )
