@@ -60,7 +60,8 @@ export default function CropAdvisor() {
         const past30 = arr.slice(0, 30)
         const total30 = past30.reduce((s, v) => s + (v || 0), 0)
         setRainfall30d(total30)
-        setSeasonalRainfall(total30 * 5)
+        // Use realistic seasonal scaling: 30-day × 5 approximates a full season
+        setSeasonalRainfall(Math.round(total30 * 5))
 
         if (total30 < 10) setDroughtStatus('drought')
         else setDroughtStatus('normal')
@@ -74,9 +75,23 @@ export default function CropAdvisor() {
   const zone = getZoneFromLocation(location.name)
   const region = getNaturalRegion(zone)
   const effectiveRainfall = simulator ?? seasonalRainfall ?? 0
+
   const recommended = getCropAdvice(effectiveRainfall, droughtStatus, zone)
+
+  // Fallback: if the region pool gives nothing, show the two most drought-tolerant crops
+  const fallbackCrops: CropRequirement[] =
+    recommended.length === 0
+      ? crops.filter(
+          (c) =>
+            c.droughtTolerance === 'very-high' || c.droughtTolerance === 'high'
+        ).slice(0, 2)
+      : []
+
+  const displayedRecommended = recommended.length > 0 ? recommended : fallbackCrops
+  const usingFallback = recommended.length === 0 && fallbackCrops.length > 0
+
   const notRecommended = crops.filter(
-    (c) => !recommended.find((r) => r.name === c.name)
+    (c) => !displayedRecommended.find((r) => r.name === c.name)
   )
 
   if (loading) {
@@ -260,7 +275,7 @@ export default function CropAdvisor() {
                 margin: '4px 0 0 0',
               }}
             >
-              {seasonalRainfall?.toFixed(0)} mm
+              {effectiveRainfall} mm
             </p>
           </div>
 
@@ -359,6 +374,18 @@ export default function CropAdvisor() {
               Reset to live data
             </button>
           )}
+          <p
+            style={{
+              fontSize: '11px',
+              color: '#475569',
+              marginTop: '8px',
+              marginBottom: 0,
+              fontStyle: 'italic',
+            }}
+          >
+            Tip: Drag the slider to see how crop suitability changes with different
+            rainfall scenarios. Real seasonal rainfall in Zimbabwe is typically 450–1050 mm.
+          </p>
         </div>
 
         {isDrought && (
@@ -391,10 +418,13 @@ export default function CropAdvisor() {
             textShadow: '0 1px 3px rgba(255,255,255,0.6)',
           }}
         >
-          ✅ Recommended Crops ({recommended.length})
+          {usingFallback ? '💡 Best Alternative Crops' : '✅ Recommended Crops'}{' '}
+          ({displayedRecommended.length})
         </h3>
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
-          Click any crop to see step-by-step growing instructions
+          {usingFallback
+            ? 'No crops match your region and rainfall exactly. These drought-tolerant alternatives are the safest options.'
+            : 'Click any crop to see step-by-step growing instructions'}
         </p>
 
         <div
@@ -405,14 +435,7 @@ export default function CropAdvisor() {
             marginTop: '14px',
           }}
         >
-          {recommended.length === 0 && (
-            <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>
-              No crops currently match the estimated rainfall for {location.name}.
-              Drag the simulator above to higher rainfall to see recommendations.
-            </p>
-          )}
-
-          {recommended.map((crop) => (
+          {displayedRecommended.map((crop) => (
             <CropCard
               key={crop.name}
               crop={crop}
@@ -439,8 +462,7 @@ export default function CropAdvisor() {
             ⚠️ Not Recommended For This Location ({notRecommended.length})
           </h3>
           <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
-            These crops require more rainfall than {location.name} is likely to
-            receive this season
+            These crops require more rainfall than the current scenario allows
           </p>
 
           <div
