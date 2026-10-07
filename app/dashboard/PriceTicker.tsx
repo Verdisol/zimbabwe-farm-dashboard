@@ -41,14 +41,14 @@ export default function PriceTicker() {
           width: max-content;
           white-space: nowrap;
           will-change: transform;
-          animation: priceTickerScroll 40s linear infinite;
+          animation: priceTickerScroll 90s linear infinite;
         }
         .price-ticker-pulse {
           animation: priceTickerPulse 3s ease-in-out infinite;
         }
       `}</style>
 
-      {/* Pulsing overlay (does not block interaction) */}
+      {/* Pulsing overlay */}
       <div
         className="price-ticker-pulse"
         style={{
