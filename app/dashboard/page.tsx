@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
-import MarketTicker from './MarketTicker'
+import PriceTicker from './PriceTicker'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import ChartSection from './ChartSection'
@@ -60,7 +60,7 @@ export default function DashboardPage() {
       >
         <TopBar />
 
-        <MarketTicker />
+        <PriceTicker />
 
         <main style={{ padding: '24px', flex: 1 }}>
           {activeTab === 'overview' && <OverviewTab />}
