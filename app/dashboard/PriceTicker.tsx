@@ -12,12 +12,15 @@ export default function PriceTicker() {
       style={{
         width: '100%',
         background:
-          'linear-gradient(90deg, rgba(22,128,60,0.92), rgba(13,90,41,0.92))',
-        borderTop: '1px solid rgba(0,255,136,0.45)',
-        borderBottom: '1px solid rgba(0,255,136,0.45)',
+          'linear-gradient(90deg, rgba(22,128,60,0.95), rgba(13,90,41,0.95))',
+        borderTop: '1px solid rgba(0,255,136,0.55)',
+        borderBottom: '1px solid rgba(0,255,136,0.55)',
         overflow: 'hidden',
-        position: 'relative',
+        position: 'sticky',
+        top: 0,
+        zIndex: 9,
         height: '44px',
+        boxShadow: '0 2px 14px rgba(0,255,136,0.35)',
       }}
     >
       <style>{`
@@ -27,10 +30,10 @@ export default function PriceTicker() {
         }
         @keyframes priceTickerPulse {
           0%, 100% {
-            box-shadow: 0 0 12px rgba(0,255,136,0.35), inset 0 0 8px rgba(0,255,136,0.10);
+            box-shadow: 0 0 12px rgba(0,255,136,0.45), inset 0 0 8px rgba(0,255,136,0.15);
           }
           50% {
-            box-shadow: 0 0 26px rgba(0,255,136,0.75), inset 0 0 14px rgba(0,255,136,0.25);
+            box-shadow: 0 0 28px rgba(0,255,136,0.85), inset 0 0 16px rgba(0,255,136,0.30);
           }
         }
         .price-ticker-track {
@@ -40,16 +43,22 @@ export default function PriceTicker() {
           will-change: transform;
           animation: priceTickerScroll 40s linear infinite;
         }
-        .price-ticker-bar {
+        .price-ticker-pulse {
           animation: priceTickerPulse 3s ease-in-out infinite;
         }
       `}</style>
 
+      {/* Pulsing overlay (does not block interaction) */}
       <div
-        className="price-ticker-bar"
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        className="price-ticker-pulse"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+        }}
       />
 
+      {/* MARKET label pill */}
       <div
         style={{
           position: 'absolute',
@@ -72,6 +81,7 @@ export default function PriceTicker() {
         MARKET
       </div>
 
+      {/* Scrolling content */}
       <div
         style={{
           paddingLeft: '90px',
@@ -79,6 +89,8 @@ export default function PriceTicker() {
           paddingBottom: '6px',
           height: '100%',
           boxSizing: 'border-box',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         <div className="price-ticker-track">
