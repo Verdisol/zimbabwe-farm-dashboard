@@ -1137,4 +1137,265 @@ function CropCard({
   return (
     <div
       style={{
-        background: 'rgba(255,255,255,0.
+        background: 'rgba(255,255,255,0.25)',
+        borderRadius: '12px',
+        border: '1px solid rgba(0,255,136,0.25)',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%',
+          padding: '14px',
+          background: 'transparent',
+          border: 'none',
+          textAlign: 'left',
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: '15px',
+              fontWeight: 700,
+              color: '#0f3d20',
+            }}
+          >
+            {crop.name}
+          </div>
+          <div
+            style={{
+              fontSize: '11px',
+              color: '#334155',
+              marginTop: '4px',
+            }}
+          >
+            Needs {crop.minRainfall}–{crop.maxRainfall} mm ·{' '}
+            {matchingVarieties.length} matching varieties
+          </div>
+          <div
+            style={{
+              fontSize: '10px',
+              marginTop: '6px',
+              color: toleranceColor[crop.droughtTolerance],
+              fontWeight: 700,
+              textTransform: 'uppercase',
+            }}
+          >
+            Drought tolerance: {crop.droughtTolerance}
+          </div>
+        </div>
+        <span style={{ fontSize: '18px', color: '#16803c' }}>
+          {isOpen ? '−' : '+'}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div
+          style={{
+            padding: '0 14px 14px 14px',
+            borderTop: '1px solid rgba(0,255,136,0.15)',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#334155',
+              lineHeight: 1.6,
+              marginTop: '10px',
+              fontStyle: 'italic',
+            }}
+          >
+            {crop.description}
+          </p>
+
+          <div
+            style={{
+              marginTop: '12px',
+              background: irrigation.needed
+                ? 'rgba(14,165,233,0.12)'
+                : 'rgba(0,255,136,0.08)',
+              border: irrigation.needed
+                ? '1px solid rgba(14,165,233,0.40)'
+                : '1px solid rgba(0,255,136,0.30)',
+              padding: '10px 12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: irrigation.needed ? '#0c4a6e' : '#0f3d20',
+                margin: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              💧 Water requirement
+            </p>
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#1f2937',
+                margin: '6px 0 0 0',
+                lineHeight: 1.6,
+              }}
+            >
+              {irrigation.message}
+            </p>
+          </div>
+
+          {matchingVarieties.length > 0 && (
+            <>
+              <h4
+                style={{
+                  fontSize: '12px',
+                  color: '#0f3d20',
+                  margin: '14px 0 8px 0',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                🌱 Varieties that fit your {daysAvailable}-day window
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {matchingVarieties.map((v) => (
+                  <div
+                    key={v.name}
+                    style={{
+                      background: 'rgba(0,255,136,0.10)',
+                      border: '1px solid rgba(0,255,136,0.35)',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: '#0f3d20',
+                      }}
+                    >
+                      {v.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#334155',
+                        marginTop: '2px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {v.maturityDays} days · {v.maturityClass} · drought tolerance:{' '}
+                      {v.droughtTolerance}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#1f2937',
+                        marginTop: '6px',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {v.note}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#16803c',
+                        marginTop: '4px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Yield potential: {v.yieldPotential}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {matchingVarieties.length === 0 && crop.varieties.length > 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                background: 'rgba(220,38,38,0.10)',
+                border: '1px solid rgba(220,38,38,0.35)',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#7f1d1d',
+                lineHeight: 1.6,
+              }}
+            >
+              ⚠️ None of the listed varieties fit in a {daysAvailable}-day growing
+              window.
+            </div>
+          )}
+
+          {crop.varieties.length === 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                background: 'rgba(255,248,225,0.75)',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#7a4a1f',
+                lineHeight: 1.6,
+              }}
+            >
+              ℹ️ Variety data not yet available for this crop.
+            </div>
+          )}
+
+          <h4
+            style={{
+              fontSize: '12px',
+              color: '#0f3d20',
+              margin: '14px 0 8px 0',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            Step-by-step growing guide
+          </h4>
+
+          <ol
+            style={{
+              fontSize: '12px',
+              color: '#1f2937',
+              lineHeight: 1.8,
+              paddingLeft: '20px',
+              margin: 0,
+            }}
+          >
+            {crop.plantingSteps.map((step, i) => (
+              <li key={i} style={{ marginBottom: '4px' }}>
+                {step}
+              </li>
+            ))}
+          </ol>
+
+          <div
+            style={{
+              marginTop: '12px',
+              fontSize: '11px',
+              color: '#16803c',
+              fontWeight: 600,
+            }}
+          >
+            Best regions: {crop.bestRegions.join(', ')}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
