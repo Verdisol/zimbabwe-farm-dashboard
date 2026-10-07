@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { getSavedLocation, District, districts } from './locationData'
-import { crops, getCropAdvice, getZoneFromLocation, CropRequirement } from './cropData'
+import {
+  crops,
+  getCropAdvice,
+  getZoneFromLocation,
+  CropRequirement,
+} from './cropData'
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -16,10 +21,12 @@ const cardStyle: React.CSSProperties = {
 
 export default function CropAdvisor() {
   const [location, setLocation] = useState<District>(districts[0])
-  const [rainfall, setRainfall] = useState<number | null>(null)
+  const [rainfall30d, setRainfall30d] = useState<number | null>(null)
+  const [seasonalRainfall, setSeasonalRainfall] = useState<number | null>(null)
   const [droughtStatus, setDroughtStatus] = useState<string>('normal')
   const [loading, setLoading] = useState(true)
   const [openCrop, setOpenCrop] = useState<string | null>(null)
+  const [simulator, setSimulator] = useState<number | null>(null)
 
   // Track location changes
   useEffect(() => {
@@ -38,9 +45,10 @@ export default function CropAdvisor() {
     }
   }, [])
 
-  // Fetch weather + rainfall for the location
+  // Fetch live weather for the location
   useEffect(() => {
     setLoading(true)
+    setSimulator(null)
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
         '&daily=precipitation_sum' +
@@ -52,14 +60,10 @@ export default function CropAdvisor() {
         const arr: number[] = data.daily?.precipitation_sum ?? []
         const past30 = arr.slice(0, 30)
         const total30 = past30.reduce((s, v) => s + (v || 0), 0)
+        setRainfall30d(total30)
+        setSeasonalRainfall(total30 * 5)
 
-        // Extrapolate to full season (rough estimate: 30-day total × 5)
-        const estimatedSeasonal = total30 * 5
-        setRainfall(estimatedSeasonal)
-
-        // Simple drought assessment based on 30-day rainfall
         if (total30 < 10) setDroughtStatus('drought')
-        else if (total30 < 30) setDroughtStatus('normal')
         else setDroughtStatus('normal')
       })
       .catch(() => {
@@ -69,7 +73,8 @@ export default function CropAdvisor() {
   }, [location])
 
   const zone = getZoneFromLocation(location.name)
-  const recommended = rainfall !== null ? getCropAdvice(rainfall, droughtStatus) : []
+  const effectiveRainfall = simulator ?? seasonalRainfall ?? 0
+  const recommended = getCropAdvice(effectiveRainfall, droughtStatus)
   const notRecommended = crops.filter(
     (c) => !recommended.find((r) => r.name === c.name)
   )
@@ -88,7 +93,7 @@ export default function CropAdvisor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Header */}
+      {/* Header + summary */}
       <div style={cardStyle}>
         <h2
           style={{
@@ -129,7 +134,7 @@ export default function CropAdvisor() {
                 textTransform: 'uppercase',
               }}
             >
-              Rainfall (30d)
+              Rainfall (past 30 days)
             </p>
             <p
               style={{
@@ -139,7 +144,7 @@ export default function CropAdvisor() {
                 margin: '4px 0 0 0',
               }}
             >
-              {((rainfall ?? 0) / 5).toFixed(1)} mm
+              {rainfall30d?.toFixed(1)} mm
             </p>
           </div>
 
@@ -159,7 +164,7 @@ export default function CropAdvisor() {
                 textTransform: 'uppercase',
               }}
             >
-              Est. seasonal rain
+              Est. seasonal rainfall
             </p>
             <p
               style={{
@@ -169,7 +174,7 @@ export default function CropAdvisor() {
                 margin: '4px 0 0 0',
               }}
             >
-              {rainfall?.toFixed(0)} mm
+              {seasonalRainfall?.toFixed(0)} mm
             </p>
           </div>
 
@@ -204,6 +209,73 @@ export default function CropAdvisor() {
           </div>
         </div>
 
+        {/* Simulator for testing / demonstration */}
+        <div
+          style={{
+            marginTop: '16px',
+            background: 'rgba(255,255,255,0.35)',
+            padding: '14px',
+            borderRadius: '10px',
+          }}
+        >
+          <label
+            style={{
+              display: 'block',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#0f3d20',
+              marginBottom: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            }}
+          >
+            🔧 Simulate seasonal rainfall (for demonstration)
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1200"
+            step="10"
+            value={effectiveRainfall}
+            onChange={(e) => setSimulator(parseInt(e.target.value, 10))}
+            style={{ width: '100%', accentColor: '#16803c' }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '12px',
+              color: '#334155',
+              marginTop: '4px',
+              fontWeight: 600,
+            }}
+          >
+            <span>0 mm</span>
+            <span style={{ color: '#16803c', fontSize: '14px' }}>
+              {effectiveRainfall} mm season
+            </span>
+            <span>1200 mm</span>
+          </div>
+          {simulator !== null && (
+            <button
+              onClick={() => setSimulator(null)}
+              style={{
+                marginTop: '8px',
+                padding: '6px 12px',
+                background: 'transparent',
+                color: '#16803c',
+                border: '1px solid #16803c',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Reset to live data
+            </button>
+          )}
+        </div>
+
         {isDrought && (
           <div
             style={{
@@ -224,7 +296,7 @@ export default function CropAdvisor() {
         )}
       </div>
 
-      {/* Recommended crops */}
+      {/* Recommended */}
       <div style={cardStyle}>
         <h3
           style={{
@@ -235,7 +307,7 @@ export default function CropAdvisor() {
             textShadow: '0 1px 3px rgba(255,255,255,0.6)',
           }}
         >
-          ✅ Recommended Crops for This Location
+          ✅ Recommended Crops ({recommended.length})
         </h3>
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
           Click any crop to see step-by-step growing instructions
@@ -252,7 +324,7 @@ export default function CropAdvisor() {
           {recommended.length === 0 && (
             <p style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic' }}>
               No crops currently match the estimated rainfall for {location.name}.
-              Consider irrigation or consult an extension officer.
+              Drag the simulator above to higher rainfall to see recommendations.
             </p>
           )}
 
@@ -281,7 +353,7 @@ export default function CropAdvisor() {
               textShadow: '0 1px 3px rgba(255,255,255,0.6)',
             }}
           >
-            ⚠️ Not Recommended For This Location
+            ⚠️ Not Recommended For This Location ({notRecommended.length})
           </h3>
           <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
             These crops require more rainfall than {location.name} is likely to
