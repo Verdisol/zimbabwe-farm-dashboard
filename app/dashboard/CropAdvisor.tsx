@@ -8,6 +8,7 @@ import {
   getZoneFromLocation,
   getNaturalRegion,
   matchVarietyToSeason,
+  irrigationAdvice,
   CropRequirement,
   CropVariety,
 } from './cropData'
@@ -25,7 +26,6 @@ const cardStyle: React.CSSProperties = {
 type MonthlyForecast = {
   month: string
   rainMm: number
-  anomalyMm: number
 }
 
 type SeasonalOutlook = {
@@ -66,11 +66,7 @@ async function fetchSeasonalOutlook(
     })
 
     const monthly: MonthlyForecast[] = Array.from(monthTotals.entries()).map(
-      ([month, rainMm]) => ({
-        month,
-        rainMm,
-        anomalyMm: 0,
-      })
+      ([month, rainMm]) => ({ month, rainMm })
     )
 
     const avgMonthly =
@@ -93,22 +89,18 @@ async function fetchSeasonalOutlook(
       icon = '🌧️'
     }
 
-    // ---- Onset detection ----
-    // Zimbabwe rainy season: Nov-March. Onset = first month ≥ 40mm.
     const rainyMonths = ['11', '12', '01', '02', '03']
     let onsetMonth: string | null = null
 
     for (const m of monthly) {
       const monthNumber = m.month.slice(5, 7)
       if (!rainyMonths.includes(monthNumber)) continue
-
       if (m.rainMm >= 40) {
         onsetMonth = m.month
         break
       }
     }
 
-    // Compute days from onset to end of season (approx. April 30)
     let daysAvailable = 0
     if (onsetMonth) {
       const onsetDate = new Date(onsetMonth + '-01')
@@ -119,7 +111,6 @@ async function fetchSeasonalOutlook(
         (seasonEnd.getTime() - onsetDate.getTime()) / (1000 * 60 * 60 * 24)
       )
     } else {
-      // No onset detected in forecast → assume 90-day short season
       daysAvailable = 90
     }
 
@@ -230,6 +221,12 @@ export default function CropAdvisor() {
 
   const isDrought = droughtStatus === 'drought' || droughtStatus === 'extreme-drought'
   const daysAvailable = outlook?.daysAvailable ?? 90
+  const monthlyRain = outlook?.monthly.map((m) => m.rainMm) ?? []
+
+  // Global irrigation flag: check if any of the top crops needs irrigation
+  const needsIrrigation = displayedRecommended.some(
+    (crop) => irrigationAdvice(crop, monthlyRain, zone).needed
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -349,18 +346,23 @@ export default function CropAdvisor() {
                     { month: 'short', year: '2-digit' }
                   )
                   const isOnset = m.month === outlook.onsetMonth
+                  const isDry = m.rainMm < 40
                   return (
                     <div
                       key={m.month}
                       style={{
                         background: isOnset
                           ? 'rgba(0,255,136,0.25)'
+                          : isDry
+                          ? 'rgba(220,38,38,0.10)'
                           : 'rgba(255,255,255,0.35)',
                         padding: '10px',
                         borderRadius: '10px',
                         textAlign: 'center',
                         border: isOnset
                           ? '2px solid rgba(0,255,136,0.65)'
+                          : isDry
+                          ? '1px solid rgba(220,38,38,0.35)'
                           : '1px solid rgba(0,255,136,0.20)',
                       }}
                     >
@@ -378,7 +380,7 @@ export default function CropAdvisor() {
                         style={{
                           fontSize: '16px',
                           fontWeight: 800,
-                          color: '#0f172a',
+                          color: isDry ? '#dc2626' : '#0f172a',
                           marginTop: '4px',
                         }}
                       >
@@ -390,7 +392,6 @@ export default function CropAdvisor() {
                 })}
               </div>
 
-              {/* Onset summary */}
               <div
                 style={{
                   marginTop: '12px',
@@ -438,6 +439,54 @@ export default function CropAdvisor() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Irrigation Advisory Banner */}
+      {needsIrrigation && (
+        <div
+          style={{
+            ...cardStyle,
+            borderLeft: '6px solid #0ea5e9',
+            background: 'rgba(14,165,233,0.10)',
+          }}
+        >
+          <h3
+            style={{
+              fontSize: '15px',
+              color: '#0c4a6e',
+              margin: 0,
+              fontWeight: 700,
+              textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+            }}
+          >
+            💧 Irrigation Advisory
+          </h3>
+          <p
+            style={{
+              fontSize: '13px',
+              color: '#1f2937',
+              margin: '8px 0 0 0',
+              lineHeight: 1.6,
+            }}
+          >
+            Dry spells or low-rainfall conditions are expected during the season.
+            Supplementary irrigation is recommended for the crops below to protect
+            flowering and grain filling stages.
+          </p>
+          <p
+            style={{
+              fontSize: '12px',
+              color: '#334155',
+              margin: '8px 0 0 0',
+              lineHeight: 1.6,
+              fontStyle: 'italic',
+            }}
+          >
+            ℹ️ Peak water requirement varies by crop — see the water note inside each
+            crop card. On sandy soils, water drains faster and you may need to
+            irrigate more frequently but with less water per application.
+          </p>
         </div>
       )}
 
@@ -731,7 +780,7 @@ export default function CropAdvisor() {
         )}
       </div>
 
-      {/* Recommended with varieties */}
+      {/* Recommended with varieties and irrigation */}
       <div style={cardStyle}>
         <h3
           style={{
@@ -748,13 +797,13 @@ export default function CropAdvisor() {
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
           {usingFallback
             ? 'No crops match your region and rainfall exactly. These drought-tolerant alternatives are the safest options.'
-            : 'Click any crop to see matching varieties and step-by-step guidance'}
+            : 'Click any crop to see matching varieties, irrigation advice, and step-by-step guidance'}
         </p>
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '12px',
             marginTop: '14px',
           }}
@@ -764,6 +813,8 @@ export default function CropAdvisor() {
               key={crop.name}
               crop={crop}
               daysAvailable={daysAvailable}
+              monthlyRain={monthlyRain}
+              zone={zone}
               isOpen={openCrop === crop.name}
               onToggle={() =>
                 setOpenCrop(openCrop === crop.name ? null : crop.name)
@@ -839,11 +890,15 @@ export default function CropAdvisor() {
 function CropCard({
   crop,
   daysAvailable,
+  monthlyRain,
+  zone,
   isOpen,
   onToggle,
 }: {
   crop: CropRequirement
   daysAvailable: number
+  monthlyRain: number[]
+  zone: 'I' | 'II' | 'III' | 'IV' | 'V'
   isOpen: boolean
   onToggle: () => void
 }) {
@@ -855,6 +910,7 @@ function CropCard({
   }
 
   const matchingVarieties: CropVariety[] = matchVarietyToSeason(crop, daysAvailable)
+  const irrigation = irrigationAdvice(crop, monthlyRain, zone)
 
   return (
     <div
@@ -935,20 +991,58 @@ function CropCard({
             {crop.description}
           </p>
 
-          {/* Varieties matching the growing window */}
+          {/* Irrigation note */}
+          <div
+            style={{
+              marginTop: '12px',
+              background: irrigation.needed
+                ? 'rgba(14,165,233,0.12)'
+                : 'rgba(0,255,136,0.08)',
+              border: irrigation.needed
+                ? '1px solid rgba(14,165,233,0.40)'
+                : '1px solid rgba(0,255,136,0.30)',
+              padding: '10px 12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                color: irrigation.needed ? '#0c4a6e' : '#0f3d20',
+                margin: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              💧 Water requirement
+            </p>
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#1f2937',
+                margin: '6px 0 0 0',
+                lineHeight: 1.6,
+              }}
+            >
+              {irrigation.message}
+            </p>
+          </div>
+
+          {/* Varieties */}
           {matchingVarieties.length > 0 && (
             <>
               <h4
                 style={{
                   fontSize: '12px',
                   color: '#0f3d20',
-                  margin: '12px 0 8px 0',
+                  margin: '14px 0 8px 0',
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                 }}
               >
-                🌱 Recommended varieties for {daysAvailable}-day window
+                🌱 Varieties that fit your {daysAvailable}-day window
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {matchingVarieties.map((v) => (
