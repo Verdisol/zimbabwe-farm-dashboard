@@ -124,9 +124,6 @@ export function getNaturalRegion(key: NaturalRegionKey): NaturalRegion {
   return naturalRegions[key]
 }
 
-// ------------------------------------------------------------------
-// Crops with growing conditions for off-season planning
-// ------------------------------------------------------------------
 export const crops: CropRequirement[] = [
   {
     name: 'Maize',
@@ -212,6 +209,30 @@ export const crops: CropRequirement[] = [
     offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
   },
   {
+    name: 'Finger Millet',
+    minRainfall: 350, maxRainfall: 600, optimalRainfall: 450,
+    droughtTolerance: 'very-high', growingDays: 110,
+    bestRegions: ['IV', 'V'],
+    description: 'Traditional grain with high nutritional value. Very resilient.',
+    plantingSteps: [
+      'Plant with early rains in November',
+      'Sow in rows 30cm apart',
+      'Apply manure or basal fertilizer if available',
+      'Thin to 10cm spacing',
+      'Weed regularly during early stage',
+      'Harvest when heads mature',
+    ],
+    varieties: [],
+    peakWaterMmPerWeek: 40,
+    irrigationNote: 'Needs 500–1000 mm total. Irrigate if dry spell during flowering.',
+    growingConditions: {
+      optimalTempMin: 20, optimalTempMax: 32, frostSensitive: true,
+      sunlightHours: 6, humidityMin: 40, humidityMax: 75,
+      windTolerant: true, offSeasonPossible: false,
+    },
+    offSeasonMonths: [],
+  },
+  {
     name: 'Groundnuts',
     minRainfall: 450, maxRainfall: 600, optimalRainfall: 500,
     droughtTolerance: 'medium', growingDays: 120,
@@ -236,9 +257,9 @@ export const crops: CropRequirement[] = [
     growingConditions: {
       optimalTempMin: 20, optimalTempMax: 30, frostSensitive: true,
       sunlightHours: 6, humidityMin: 50, humidityMax: 80,
-      windTolerant: false, offSeasonPossible: true,
+      windTolerant: false, offSeasonPossible: false,
     },
-    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+    offSeasonMonths: [],
   },
   {
     name: 'Cowpeas',
@@ -292,6 +313,97 @@ export const crops: CropRequirement[] = [
     },
     offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
   },
+  {
+    name: 'Tobacco',
+    minRainfall: 500, maxRainfall: 900, optimalRainfall: 700,
+    droughtTolerance: 'low', growingDays: 150,
+    bestRegions: ['I', 'II'],
+    description: "Zimbabwe's top agricultural export. Requires warm climate (20–30°C), full sunlight, well-drained sandy loams, and 90–120 frost-free days.",
+    plantingSteps: [
+      'Start seedbeds 8–10 weeks before last frost (Aug–Sept)',
+      'Transplant when soil temp ≥ 18°C and 90+ frost-free days remain',
+      'Apply basal fertilizer 7:14:7 at 400–600 kg/ha based on soil test',
+      'Top dress with Ammonium Nitrate or Super Cereal Blend in 2–3 splits',
+      'Scout for aphids, budworm, and leaf diseases weekly',
+      'Reap leaves progressively from bottom as they ripen',
+      'Cure in barns (flue-cured) for 5–7 days',
+    ],
+    varieties: [
+      { name: 'KRK 26 (Kutsaga)', maturityDays: 150, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '3.0–4.0 t/ha cured leaf', note: 'Flue-cured. Resistant to black shank and root-knot nematodes.' },
+      { name: 'T 66 (Kutsaga)', maturityDays: 145, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '2.8–3.5 t/ha', note: 'Popular flue-cured variety. Good leaf quality.' },
+      { name: 'K 35 (Kutsaga)', maturityDays: 155, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '3.2–4.2 t/ha', note: 'High-yielding flue-cured variety.' },
+    ],
+    peakWaterMmPerWeek: 45,
+    irrigationNote: 'Needs 500–700 mm total. Irrigation essential in Zimbabwe.',
+    growingConditions: {
+      optimalTempMin: 20, optimalTempMax: 30, frostSensitive: true,
+      sunlightHours: 7, humidityMin: 60, humidityMax: 70,
+      windTolerant: false, offSeasonPossible: false,
+    },
+    offSeasonMonths: [],
+  },
+  {
+    name: 'Cotton',
+    minRainfall: 400, maxRainfall: 700, optimalRainfall: 550,
+    droughtTolerance: 'high', growingDays: 180,
+    bestRegions: ['III', 'IV', 'V'],
+    description: "Zimbabwe's second-highest agricultural export. Drought-tolerant cash crop for hotter semi-arid regions.",
+    plantingSteps: [
+      'Plant with summer rains in November (mono-planting)',
+      'Use certified seed from Cottco or Quton (contract scheme)',
+      'Apply basal Compound C or 7:14:7 at planting',
+      'Top dress with Ammonium Nitrate at squaring stage',
+      'Scout for bollworm, aphids, and jassids',
+      'Hand-pick in 3–4 rounds from May to July',
+    ],
+    varieties: [
+      { name: 'SZ 9314 (Quton)', maturityDays: 180, maturityClass: 'medium', droughtTolerance: 'high', yieldPotential: '1.5–2.5 t/ha seed cotton', note: "Zimbabwe's most widely grown cotton." },
+      { name: 'LS 9219 (Quton)', maturityDays: 175, maturityClass: 'medium', droughtTolerance: 'high', yieldPotential: '1.2–2.0 t/ha seed cotton', note: 'Suited to lower-rainfall regions (NR IV and V).' },
+      { name: 'A 637-24 (Quton)', maturityDays: 185, maturityClass: 'late', droughtTolerance: 'medium', yieldPotential: '1.8–2.8 t/ha seed cotton', note: 'Higher yield potential. Suited to NR III.' },
+    ],
+    peakWaterMmPerWeek: 50,
+    irrigationNote: 'Dryland crop in NR III–V. Needs 400–700 mm total.',
+    growingConditions: {
+      optimalTempMin: 20, optimalTempMax: 35, frostSensitive: true,
+      sunlightHours: 7, humidityMin: 40, humidityMax: 70,
+      windTolerant: true, offSeasonPossible: false,
+    },
+    offSeasonMonths: [],
+  },
+  {
+    name: 'Wheat',
+    minRainfall: 400, maxRainfall: 600, optimalRainfall: 500,
+    droughtTolerance: 'low', growingDays: 130,
+    bestRegions: ['I', 'II'],
+    description: 'Winter irrigated crop. Best grown under irrigation with optimum day temps 15–20°C and cooler nights.',
+    plantingSteps: [
+      'Plant mid-April to end of May',
+      'Seed rate: 110–125 kg/ha drilled; 125–135 kg/ha broadcast',
+      'Target population: 250,000–300,000 plants/ha',
+      'Apply basal fertilizer (Compound D or 7:14:7) at 300–550 kg/ha',
+      'Apply light irrigation at 4–5 days after sowing',
+      'Hardening stage: stop irrigation 10–14 days',
+      'Top dress with AN or Urea in 2 splits',
+      'Irrigate every 7–9 days on sandy soils, 10–14 days on clays',
+      'Stop irrigation when peduncle turns yellow',
+      'Harvest at 12.5% moisture',
+    ],
+    varieties: [
+      { name: 'SC Nduna (Seed Co)', maturityDays: 125, maturityClass: 'early', droughtTolerance: 'low', yieldPotential: '8–10 t/ha', note: 'White seeded bread wheat.' },
+      { name: 'SC Sekuru (Seed Co)', maturityDays: 130, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '8–11 t/ha', note: 'Red seeded, ideal for bread making.' },
+      { name: 'SC Smart (Seed Co)', maturityDays: 128, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '8–12 t/ha', note: 'Resistant to leaf rust and powdery mildew.' },
+      { name: 'SC Stallion (Seed Co)', maturityDays: 130, maturityClass: 'medium', droughtTolerance: 'low', yieldPotential: '8–11 t/ha', note: 'Red seeded, strong disease resistance.' },
+      { name: 'SC Sahai (Seed Co)', maturityDays: 125, maturityClass: 'early', droughtTolerance: 'medium', yieldPotential: 'Up to 3 t/ha in summer', note: 'Summer wheat variety — plant around January.' },
+    ],
+    peakWaterMmPerWeek: 55,
+    irrigationNote: 'Total gross water: 450–600 mm per ha. Critical: root development, heading, booting, blister, milk dough, grain filling.',
+    growingConditions: {
+      optimalTempMin: 15, optimalTempMax: 20, frostSensitive: true,
+      sunlightHours: 6, humidityMin: 50, humidityMax: 75,
+      windTolerant: false, offSeasonPossible: false,
+    },
+    offSeasonMonths: [],
+  },
   // ---------- OFF-SEASON HORTICULTURE ----------
   {
     name: 'Tomatoes',
@@ -308,11 +420,11 @@ export const crops: CropRequirement[] = [
       'Harvest at colour break for market',
     ],
     varieties: [
-      { name: 'Trinity', maturityDays: 90, maturityClass: 'early', droughtTolerance: 'medium', yieldPotential: '40kg/crate, 5000+ kg/ha', note: 'Can be grown throughout the year. Resistant to nematodes. Popular in Mutoko.' },
+      { name: 'Trinity', maturityDays: 90, maturityClass: 'early', droughtTolerance: 'medium', yieldPotential: '40kg/crate, 5000+ kg/ha', note: 'Can be grown throughout the year. Resistant to nematodes.' },
       { name: 'Cadella', maturityDays: 95, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High tunnel yield', note: 'Long shelf life. Recommended for tunnel production.' },
     ],
     peakWaterMmPerWeek: 55,
-    irrigationNote: 'Drip irrigation preferred. Avoid overhead to reduce disease. Water daily in hot weather.',
+    irrigationNote: 'Drip irrigation preferred. Avoid overhead to reduce disease.',
     growingConditions: {
       optimalTempMin: 18, optimalTempMax: 28, frostSensitive: true,
       sunlightHours: 6, humidityMin: 50, humidityMax: 70,
@@ -424,7 +536,7 @@ export const crops: CropRequirement[] = [
     minRainfall: 300, maxRainfall: 450, optimalRainfall: 380,
     droughtTolerance: 'medium', growingDays: 65,
     bestRegions: ['I', 'II', 'III'],
-    description: 'Mustard greens. Cold-tolerant, best yields April–August. Pest-tolerant due to hot taste.',
+    description: 'Mustard greens. Cold-tolerant, best yields April–August.',
     plantingSteps: [
       'Direct sow, 0.5–1cm depth',
       'Thin to 10,000–16,000 plants/ha',
@@ -445,7 +557,7 @@ export const crops: CropRequirement[] = [
     offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
   },
   {
-    name: 'Peas (Mangetout/Sugar snap)',
+    name: 'Peas',
     minRainfall: 400, maxRainfall: 600, optimalRainfall: 500,
     droughtTolerance: 'low', growingDays: 90,
     bestRegions: ['I', 'II'],
@@ -476,7 +588,7 @@ export const crops: CropRequirement[] = [
     minRainfall: 350, maxRainfall: 500, optimalRainfall: 420,
     droughtTolerance: 'medium', growingDays: 150,
     bestRegions: ['I', 'II', 'III'],
-    description: 'High-value horticulture. Grown year-round under irrigation. High demand from Mozambique.',
+    description: 'High-value horticulture. Grown year-round under irrigation.',
     plantingSteps: [
       'Start seedlings in nursery 6–8 weeks before transplanting',
       'Transplant when pencil-thick',
@@ -486,8 +598,8 @@ export const crops: CropRequirement[] = [
       'Cure bulbs in field 1–2 weeks before storage',
     ],
     varieties: [
-      { name: 'White King', maturityDays: 140, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Popular white onion. Sold at US$3–5 per 10kg pocket.' },
-      { name: 'Red King', maturityDays: 145, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Red onion. Sold at US$6–9 per 10kg pocket.' },
+      { name: 'White King', maturityDays: 140, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Popular white onion.' },
+      { name: 'Red King', maturityDays: 145, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Red onion. Higher price in market.' },
     ],
     peakWaterMmPerWeek: 40,
     irrigationNote: 'Drip or furrow. Reduce watering as bulbs mature.',
@@ -552,10 +664,6 @@ export const crops: CropRequirement[] = [
   },
 ]
 
-/**
- * Recommend crops based on seasonal rainfall, drought status, and region.
- * Also suggests off-season crops based on growing conditions.
- */
 export function getCropAdvice(
   seasonalRainfall: number,
   droughtStatus: string,
@@ -583,15 +691,13 @@ export function getCropAdvice(
   return pool.filter((c) => seasonalRainfall >= c.minRainfall * 0.7)
 }
 
-/**
- * Get off-season crops suitable for a region based on growing conditions.
- * These can be grown with irrigation during dry months.
- */
 export function getOffSeasonCrops(regionKey: NaturalRegionKey): CropRequirement[] {
   return crops.filter(
     (c) =>
       c.offSeasonMonths.length > 0 &&
-      (c.bestRegions.includes(regionKey) || c.bestRegions.includes('I') || c.bestRegions.includes('II'))
+      (c.bestRegions.includes(regionKey) ||
+        c.bestRegions.includes('I') ||
+        c.bestRegions.includes('II'))
   )
 }
 
