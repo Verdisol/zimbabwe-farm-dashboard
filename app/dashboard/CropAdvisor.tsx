@@ -40,6 +40,13 @@ type SeasonalOutlook = {
   daysAvailable: number
 }
 
+type TerrainInfo = {
+  elevation: number
+  reliefZone: string
+  slopeClass: string
+  slopeAdvice: string
+}
+
 async function fetchSeasonalOutlook(
   lat: number,
   lng: number
@@ -130,12 +137,62 @@ async function fetchSeasonalOutlook(
   }
 }
 
+async function fetchTerrain(
+  lat: number,
+  lng: number
+): Promise<TerrainInfo | null> {
+  try {
+    const url = `https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`
+    const res = await fetch(url)
+    const data = await res.json()
+    const elevation = data.elevation?.[0] ?? null
+
+    if (elevation === null) return null
+
+    // Classify relief zone based on Zimbabwe standards
+    // Source: FAO Chapter 10 — Lowveld (<900m), Middleveld (900-1200m),
+    // Highveld (1200-2000m), Eastern Highlands (2000-2400m)
+    let reliefZone = 'Unknown'
+    if (elevation < 900) reliefZone = 'Lowveld'
+    else if (elevation < 1200) reliefZone = 'Middleveld'
+    else if (elevation < 2000) reliefZone = 'Highveld'
+    else reliefZone = 'Eastern Highlands'
+
+    // Slope classification reference (FAO):
+    // 0-2% very flat, 2-5% flat, 5-10% moderate, 10-25% steep
+    // We estimate slope class heuristically based on relief zone
+    // (actual slope requires multi-point sampling)
+    let slopeClass = 'Gentle (0–2%)'
+    let slopeAdvice =
+      'Terrain is very flat. Excellent for mechanised farming, irrigation, and all crop types.'
+
+    if (reliefZone === 'Middleveld') {
+      slopeClass = 'Flat to Moderate (2–5%)'
+      slopeAdvice =
+        'Gentle slopes. Suitable for most crops. Consider contour ploughing on sloping portions to reduce soil erosion.'
+    } else if (reliefZone === 'Highveld') {
+      slopeClass = 'Moderate (5–10%)'
+      slopeAdvice =
+        'Moderate slopes. Contour ploughing and conservation agriculture recommended. Maize and legumes grow well. Avoid steep areas for row crops.'
+    } else if (reliefZone === 'Eastern Highlands') {
+      slopeClass = 'Steep (>10%)'
+      slopeAdvice =
+        'Steep terrain. Best for forestry, tea, and orchards. Row cropping is risky due to erosion. Use terracing if cultivating.'
+    }
+
+    return { elevation, reliefZone, slopeClass, slopeAdvice }
+  } catch {
+    return null
+  }
+}
+
 export default function CropAdvisor() {
   const [location, setLocation] = useState<District>(districts[0])
   const [rainfall30d, setRainfall30d] = useState<number | null>(null)
   const [seasonalRainfall, setSeasonalRainfall] = useState<number | null>(null)
   const [droughtStatus, setDroughtStatus] = useState<string>('normal')
   const [outlook, setOutlook] = useState<SeasonalOutlook | null>(null)
+  const [terrain, setTerrain] = useState<TerrainInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [openCrop, setOpenCrop] = useState<string | null>(null)
   const [simulator, setSimulator] = useState<number | null>(null)
@@ -160,6 +217,7 @@ export default function CropAdvisor() {
     setLoading(true)
     setSimulator(null)
     setOutlook(null)
+    setTerrain(null)
 
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lng}` +
@@ -186,6 +244,8 @@ export default function CropAdvisor() {
       setOutlook(result)
       setLoading(false)
     })
+
+    fetchTerrain(location.lat, location.lng).then(setTerrain)
   }, [location])
 
   const zone = getZoneFromLocation(location.name)
@@ -223,13 +283,161 @@ export default function CropAdvisor() {
   const daysAvailable = outlook?.daysAvailable ?? 90
   const monthlyRain = outlook?.monthly.map((m) => m.rainMm) ?? []
 
-  // Global irrigation flag: check if any of the top crops needs irrigation
   const needsIrrigation = displayedRecommended.some(
     (crop) => irrigationAdvice(crop, monthlyRain, zone).needed
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Terrain / Elevation card */}
+      {terrain && (
+        <div
+          style={{
+            ...cardStyle,
+            borderLeft: '6px solid #8b5cf6',
+            background: 'rgba(139,92,246,0.08)',
+          }}
+        >
+          <h3
+            style={{
+              fontSize: '15px',
+              color: '#4c1d95',
+              margin: 0,
+              fontWeight: 700,
+              textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+            }}
+          >
+            ⛰️ Terrain & Elevation for {location.name}
+          </h3>
+          <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
+            Copernicus DEM GLO-90 via Open-Meteo
+          </p>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '10px',
+              marginTop: '14px',
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.35)',
+                padding: '12px',
+                borderRadius: '10px',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#4c1d95',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Elevation
+              </p>
+              <p
+                style={{
+                  fontSize: '22px',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                  margin: '4px 0 0 0',
+                }}
+              >
+                {terrain.elevation.toFixed(0)} m
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.35)',
+                padding: '12px',
+                borderRadius: '10px',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#4c1d95',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Relief Zone
+              </p>
+              <p
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                  margin: '4px 0 0 0',
+                }}
+              >
+                {terrain.reliefZone}
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.35)',
+                padding: '12px',
+                borderRadius: '10px',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#4c1d95',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Slope Class
+              </p>
+              <p
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                  margin: '4px 0 0 0',
+                }}
+              >
+                {terrain.slopeClass}
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '12px',
+              background: 'rgba(139,92,246,0.10)',
+              border: '1px solid rgba(139,92,246,0.30)',
+              padding: '12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#1f2937',
+                margin: 0,
+                lineHeight: 1.6,
+              }}
+            >
+              <strong>Terrain advice:</strong> {terrain.slopeAdvice}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Seasonal Outlook */}
       {outlook && (
         <div
@@ -879,9 +1087,9 @@ export default function CropAdvisor() {
         }}
       >
         Advisory based on Zimbabwe Natural Regions (NR I–V), FAO crop water
-        requirements, ECMWF SEAS5 seasonal forecasts, and variety maturity data from
-        Seed Co, DR&SS and ICRISAT. Sources: Farmonaut (2026), AGRITEX Zimbabwe, MSD
-        Zimbabwe.
+        requirements, ECMWF SEAS5 seasonal forecasts, Copernicus DEM terrain data,
+        and variety maturity data from Seed Co, DR&SS and ICRISAT. Sources:
+        Farmonaut (2026), AGRITEX Zimbabwe, MSD Zimbabwe.
       </p>
     </div>
   )
@@ -991,7 +1199,6 @@ function CropCard({
             {crop.description}
           </p>
 
-          {/* Irrigation note */}
           <div
             style={{
               marginTop: '12px',
@@ -1029,7 +1236,6 @@ function CropCard({
             </p>
           </div>
 
-          {/* Varieties */}
           {matchingVarieties.length > 0 && (
             <>
               <h4
