@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
@@ -13,7 +13,9 @@ import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
 import LocationPicker from './LocationPicker'
+import ExportButton from './ExportButton'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
+import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
 const cardStyle: React.CSSProperties = {
@@ -29,6 +31,18 @@ const cardStyle: React.CSSProperties = {
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [language, setLanguage] = useState<Language>('en')
+
+  useEffect(() => {
+    setLanguage(getSavedLanguage())
+    const onLanguageChange = () => setLanguage(getSavedLanguage())
+    window.addEventListener('languageChanged', onLanguageChange)
+    window.addEventListener('storage', onLanguageChange)
+    return () => {
+      window.removeEventListener('languageChanged', onLanguageChange)
+      window.removeEventListener('storage', onLanguageChange)
+    }
+  }, [])
 
   return (
     <div
@@ -61,16 +75,29 @@ export default function DashboardPage() {
         <TopBar />
 
         <main style={{ padding: '24px', flex: 1 }}>
-          {activeTab === 'overview' && <OverviewTab />}
-          {activeTab === 'map' && <MapTab />}
-          {activeTab === 'weather' && <WeatherTab />}
-          {activeTab === 'drought' && <DroughtTab />}
-          {activeTab === 'predictions' && <PredictionsTab />}
-          {activeTab === 'charts' && <ChartsTab />}
-          {activeTab === 'market' && <MarketTab />}
-          {activeTab === 'learn' && <LearnTab />}
-          {activeTab === 'help' && <HelpTab />}
-          {activeTab === 'subscribe' && <SubscribeTab />}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: '16px',
+              gap: '10px',
+            }}
+          >
+            <ExportButton targetId="export-area" />
+          </div>
+
+          <div id="export-area">
+            {activeTab === 'overview' && <OverviewTab language={language} />}
+            {activeTab === 'map' && <MapTab language={language} />}
+            {activeTab === 'weather' && <WeatherTab language={language} />}
+            {activeTab === 'drought' && <DroughtTab language={language} />}
+            {activeTab === 'predictions' && <PredictionsTab language={language} />}
+            {activeTab === 'charts' && <ChartsTab language={language} />}
+            {activeTab === 'market' && <MarketTab language={language} />}
+            {activeTab === 'learn' && <LearnTab language={language} />}
+            {activeTab === 'help' && <HelpTab language={language} />}
+            {activeTab === 'subscribe' && <SubscribeTab language={language} />}
+          </div>
         </main>
       </div>
 
@@ -130,21 +157,20 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-function OverviewTab() {
+function OverviewTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title="Overview" subtitle="Your farm at a glance" />
-
+      <SectionHeading
+        title={t(language, 'tab_overview_title')}
+        subtitle={t(language, 'tab_overview_sub')}
+      />
       <LocationPicker />
-
       <StatCards />
-
       <div style={{ marginBottom: '16px' }}>
         <GlowWrapper>
           <WeatherCard />
         </GlowWrapper>
       </div>
-
       <div
         style={{
           display: 'grid',
@@ -163,10 +189,13 @@ function OverviewTab() {
   )
 }
 
-function MapTab() {
+function MapTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title="Map" subtitle="Explore your district and surrounding areas" />
+      <SectionHeading
+        title={t(language, 'tab_map_title')}
+        subtitle={t(language, 'tab_map_sub')}
+      />
       <LocationPicker />
       <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
         <GlowWrapper>
@@ -177,10 +206,13 @@ function MapTab() {
   )
 }
 
-function WeatherTab() {
+function WeatherTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title="Weather" subtitle="Current conditions and 7-day forecast" />
+      <SectionHeading
+        title={t(language, 'tab_weather_title')}
+        subtitle={t(language, 'tab_weather_sub')}
+      />
       <LocationPicker />
       <GlowWrapper>
         <WeatherCard />
@@ -189,12 +221,12 @@ function WeatherTab() {
   )
 }
 
-function DroughtTab() {
+function DroughtTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Drought Monitor"
-        subtitle="Live drought and bumper harvest status for your district"
+        title={t(language, 'tab_drought_title')}
+        subtitle={t(language, 'tab_drought_sub')}
       />
       <LocationPicker />
       <DroughtMonitor />
@@ -202,12 +234,12 @@ function DroughtTab() {
   )
 }
 
-function PredictionsTab() {
+function PredictionsTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Predictions"
-        subtitle="Random Forest predictions of maize yield"
+        title={t(language, 'tab_predictions_title')}
+        subtitle={t(language, 'tab_predictions_sub')}
       />
       <div
         style={{
@@ -227,31 +259,31 @@ function PredictionsTab() {
   )
 }
 
-function ChartsTab() {
+function ChartsTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Charts"
-        subtitle="Visual analysis of maize yield, crop distribution, and frequency"
+        title={t(language, 'tab_charts_title')}
+        subtitle={t(language, 'tab_charts_sub')}
       />
       <Charts />
     </>
   )
 }
 
-function MarketTab() {
+function MarketTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Market"
-        subtitle="Producer prices and wholesale market rates across Zimbabwe"
+        title={t(language, 'tab_market_title')}
+        subtitle={t(language, 'tab_market_sub')}
       />
       <Market />
     </>
   )
 }
 
-function LearnTab() {
+function LearnTab({ language }: { language: Language }) {
   const [category, setCategory] = useState<LearnCategory>('all')
 
   const filtered =
@@ -260,8 +292,8 @@ function LearnTab() {
   return (
     <>
       <SectionHeading
-        title="Did You Know?"
-        subtitle="Crop education, pest help, disease identification, and best practices"
+        title={t(language, 'tab_learn_title')}
+        subtitle={t(language, 'tab_learn_sub')}
       />
 
       <div
@@ -391,12 +423,12 @@ function LearnTab() {
   )
 }
 
-function HelpTab() {
+function HelpTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Help Centre"
-        subtitle="Get support, ask questions, or contact a consultant"
+        title={t(language, 'tab_help_title')}
+        subtitle={t(language, 'tab_help_sub')}
       />
 
       <div style={{ ...cardStyle, maxWidth: '640px' }}>
@@ -448,12 +480,12 @@ function HelpTab() {
   )
 }
 
-function SubscribeTab() {
+function SubscribeTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading
-        title="Subscription"
-        subtitle="Choose a plan and pay with EcoCash, Mukuru, InnBucks, or Bank Transfer"
+        title={t(language, 'tab_subscribe_title')}
+        subtitle={t(language, 'tab_subscribe_sub')}
       />
       <Subscription />
     </>
