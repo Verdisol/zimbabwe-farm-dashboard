@@ -1,10 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 type Plan = 'monthly' | 'quarterly' | 'yearly'
 type Method = 'ecocash' | 'mukuru' | 'innbucks' | 'bank'
+
+type ExistingSub = {
+  id: number
+  plan: string
+  payment_method: string
+  reference_code: string
+  amount_usd: number
+  status: string
+  created_at: string
+} | null
 
 const plans: { key: Plan; label: string; price: number; period: string; note: string }[] = [
   {
@@ -61,6 +71,16 @@ const methods: { key: Method; label: string; icon: string; instructions: string 
   },
 ]
 
+function getStatusBadge(status: string) {
+  if (status === 'approved' || status === 'paid') {
+    return { label: 'Approved', color: '#16803c', bg: 'rgba(22,128,60,0.15)', icon: '✅' }
+  }
+  if (status === 'rejected' || status === 'cancelled') {
+    return { label: 'Rejected', color: '#dc2626', bg: 'rgba(220,38,38,0.12)', icon: '❌' }
+  }
+  return { label: 'Pending Approval', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', icon: '⏳' }
+}
+
 export default function Subscription() {
   const [selectedPlan, setSelectedPlan] = useState<Plan>('monthly')
   const [selectedMethod, setSelectedMethod] = useState<Method>('ecocash')
@@ -73,6 +93,37 @@ export default function Subscription() {
     plan: string
     payment_method: string
   }>(null)
+
+  const [existing, setExisting] = useState<ExistingSub>(null)
+  const [loadingStatus, setLoadingStatus] = useState(false)
+
+  // Try to read the logged-in user's email from localStorage
+  // (we save it on login so we can look up their subscription)
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('farmerEmail')
+    if (savedEmail) {
+      setEmail(savedEmail)
+      fetchStatus(savedEmail)
+    }
+  }, [])
+
+  const fetchStatus = (userEmail: string) => {
+    if (!userEmail) return
+    setLoadingStatus(true)
+    fetch(`/api/subscription-status?email=${encodeURIComponent(userEmail)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.hasSubscription) {
+          setExisting(data.subscription)
+        } else {
+          setExisting(null)
+        }
+      })
+      .catch(() => {
+        /* silent */
+      })
+      .finally(() => setLoadingStatus(false))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,6 +152,8 @@ export default function Subscription() {
         toast.success('Subscription submitted! 🌾', {
           description: 'Follow the payment instructions below.',
         })
+        // Refresh status card
+        fetchStatus(email)
       } else {
         toast.error('Submission failed', { description: data.error })
       }
@@ -122,6 +175,123 @@ export default function Subscription() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Status card — shown if a subscription exists */}
+      {existing && (
+        <div
+          style={{
+            background: getStatusBadge(existing.status).bg,
+            border: `1px solid ${getStatusBadge(existing.status).color}`,
+            borderRadius: '16px',
+            padding: '20px',
+            boxShadow: '0 0 20px rgba(0,255,136,0.20)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '28px' }}>{getStatusBadge(existing.status).icon}</span>
+            <div>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  color: getStatusBadge(existing.status).color,
+                }}
+              >
+                {getStatusBadge(existing.status).label}
+              </h3>
+              <p
+                style={{
+                  margin: '2px 0 0 0',
+                  fontSize: '13px',
+                  color: '#334155',
+                }}
+              >
+                Reference: <strong>{existing.reference_code}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '14px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '10px',
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#334155',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Plan
+              </p>
+              <p style={{ margin: '2px 0 0 0', color: '#0f172a', fontWeight: 700 }}>
+                {existing.plan}
+              </p>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#334155',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Amount
+              </p>
+              <p style={{ margin: '2px 0 0 0', color: '#0f172a', fontWeight: 700 }}>
+                USD {Number(existing.amount_usd).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#334155',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Method
+              </p>
+              <p style={{ margin: '2px 0 0 0', color: '#0f172a', fontWeight: 700 }}>
+                {existing.payment_method}
+              </p>
+            </div>
+            <div>
+              <p
+                style={{
+                  fontSize: '11px',
+                  color: '#334155',
+                  margin: 0,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Submitted
+              </p>
+              <p style={{ margin: '2px 0 0 0', color: '#0f172a', fontWeight: 700 }}>
+                {new Date(existing.created_at).toLocaleDateString('en-GB')}
+              </p>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '12px', color: '#475569', marginTop: '12px', marginBottom: 0 }}>
+            If your payment has been received, the administrator will approve this
+            subscription shortly.
+          </p>
+        </div>
+      )}
+
       {!receipt ? (
         <form
           onSubmit={handleSubmit}
@@ -188,7 +358,13 @@ export default function Subscription() {
                   >
                     USD {p.price}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#334155', marginTop: '2px' }}>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: '#334155',
+                      marginTop: '2px',
+                    }}
+                  >
                     {p.period}
                   </div>
                   <div
@@ -259,7 +435,14 @@ export default function Subscription() {
           <h2 style={{ fontSize: '16px', color: '#0f172a', margin: '0 0 12px 0' }}>
             3. Your details
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
+          >
             <div>
               <label
                 style={{
@@ -277,6 +460,7 @@ export default function Subscription() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={(e) => fetchStatus(e.target.value)}
                 placeholder="you@example.com"
                 style={{
                   width: '100%',
