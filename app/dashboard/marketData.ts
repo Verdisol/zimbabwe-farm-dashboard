@@ -40,6 +40,7 @@ export const crops = [
   'Sugar beans',
   'Beans',
   'Nyemba',
+  'Traditional Grains',
   // Horticulture
   'Butternuts',
   'Potatoes',
@@ -77,7 +78,7 @@ export const crops = [
 ]
 
 export const marketData: MarketRow[] = [
-  // ---------- HORTICULTURE ----------
+  // ---------- HORTICULTURE (Mbare Musika) ----------
   {
     produce: 'Butternuts',
     market: 'Mbare Musika',
@@ -536,5 +537,66 @@ export const marketData: MarketRow[] = [
     date: '2026-09-26',
     source: 'Farmers.co.zw',
     unit: 'per Semea',
+  },
+  // ---------- GMB PRODUCER PRICES (2026/27 season) ----------
+  {
+    produce: 'Maize',
+    market: 'GMB Producer Price',
+    province: 'Harare',
+    location: 'National (floor price)',
+    rangeLow: 432,
+    rangeHigh: 432,
+    average: 432,
+    date: '2026-09-10',
+    source: 'Grain Marketing Board (GMB)',
+    unit: 'per tonne',
+  },
+  {
+    produce: 'Traditional Grains',
+    market: 'GMB Producer Price',
+    province: 'Harare',
+    location: 'National (floor price)',
+    rangeLow: 432,
+    rangeHigh: 432,
+    average: 432,
+    date: '2026-09-10',
+    source: 'Grain Marketing Board (GMB)',
+    unit: 'per tonne',
+  },
+  {
+    produce: 'Soyabeans',
+    market: 'GMB Producer Price',
+    province: 'Harare',
+    location: 'National (floor price)',
+    rangeLow: 660.95,
+    rangeHigh: 660.95,
+    average: 660.95,
+    date: '2026-09-10',
+    source: 'Grain Marketing Board (GMB)',
+    unit: 'per tonne',
+  },
+  {
+    produce: 'Sunflower',
+    market: 'GMB Producer Price',
+    province: 'Harare',
+    location: 'National (floor price)',
+    rangeLow: 826.19,
+    rangeHigh: 826.19,
+    average: 826.19,
+    date: '2026-09-10',
+    source: 'Grain Marketing Board (GMB)',
+    unit: 'per tonne',
+  },
+  {
+    produce: 'Wheat',
+    market: 'GMB Producer Price',
+    province: 'Harare',
+    location: 'National (floor price)',
+    rangeLow: 531.93,
+    rangeHigh: 531.93,
+    average: 531.93,
+    date: '2026-09-10',
+    source: 'Grain Marketing Board (GMB)',
+    unit: 'per tonne',
   },
 ]
