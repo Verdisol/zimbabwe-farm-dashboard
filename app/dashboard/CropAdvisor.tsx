@@ -7,7 +7,9 @@ import {
   getCropAdvice,
   getZoneFromLocation,
   getNaturalRegion,
+  matchVarietyToSeason,
   CropRequirement,
+  CropVariety,
 } from './cropData'
 
 const cardStyle: React.CSSProperties = {
@@ -34,10 +36,10 @@ type SeasonalOutlook = {
   anomaly: number
   monthly: MonthlyForecast[]
   source: string
+  onsetMonth: string | null
+  daysAvailable: number
 }
 
-// Zimbabwe's rainfall season runs Nov - March
-// Open-Meteo seasonal API returns daily precipitation; we sum per month
 async function fetchSeasonalOutlook(
   lat: number,
   lng: number
@@ -57,10 +59,9 @@ async function fetchSeasonalOutlook(
 
     if (times.length === 0) return null
 
-    // Aggregate by calendar month
     const monthTotals = new Map<string, number>()
     times.forEach((t, i) => {
-      const key = t.slice(0, 7) // YYYY-MM
+      const key = t.slice(0, 7)
       monthTotals.set(key, (monthTotals.get(key) || 0) + (rains[i] || 0))
     })
 
@@ -68,11 +69,10 @@ async function fetchSeasonalOutlook(
       ([month, rainMm]) => ({
         month,
         rainMm,
-        anomalyMm: 0, // API doesn't provide baseline directly in this call
+        anomalyMm: 0,
       })
     )
 
-    // Simple heuristic classification based on average monthly rainfall
     const avgMonthly =
       monthly.reduce((s, m) => s + m.rainMm, 0) / (monthly.length || 1)
 
@@ -93,6 +93,36 @@ async function fetchSeasonalOutlook(
       icon = '🌧️'
     }
 
+    // ---- Onset detection ----
+    // Zimbabwe rainy season: Nov-March. Onset = first month ≥ 40mm.
+    const rainyMonths = ['11', '12', '01', '02', '03']
+    let onsetMonth: string | null = null
+
+    for (const m of monthly) {
+      const monthNumber = m.month.slice(5, 7)
+      if (!rainyMonths.includes(monthNumber)) continue
+
+      if (m.rainMm >= 40) {
+        onsetMonth = m.month
+        break
+      }
+    }
+
+    // Compute days from onset to end of season (approx. April 30)
+    let daysAvailable = 0
+    if (onsetMonth) {
+      const onsetDate = new Date(onsetMonth + '-01')
+      const year = onsetDate.getFullYear()
+      const nextYear = onsetDate.getMonth() >= 10 ? year + 1 : year
+      const seasonEnd = new Date(`${nextYear}-04-30`)
+      daysAvailable = Math.round(
+        (seasonEnd.getTime() - onsetDate.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    } else {
+      // No onset detected in forecast → assume 90-day short season
+      daysAvailable = 90
+    }
+
     return {
       status,
       label,
@@ -101,6 +131,8 @@ async function fetchSeasonalOutlook(
       anomaly: avgMonthly,
       monthly,
       source: 'ECMWF SEAS5 via Open-Meteo Seasonal API',
+      onsetMonth,
+      daysAvailable,
     }
   } catch {
     return null
@@ -197,10 +229,11 @@ export default function CropAdvisor() {
   }
 
   const isDrought = droughtStatus === 'drought' || droughtStatus === 'extreme-drought'
+  const daysAvailable = outlook?.daysAvailable ?? 90
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Seasonal Outlook — NEW */}
+      {/* Seasonal Outlook */}
       {outlook && (
         <div
           style={{
@@ -229,7 +262,6 @@ export default function CropAdvisor() {
             {outlook.source}
           </p>
 
-          {/* A: Simple badge */}
           <div
             style={{
               display: 'flex',
@@ -259,7 +291,6 @@ export default function CropAdvisor() {
             </div>
           </div>
 
-          {/* B: Detailed anomaly */}
           <div
             style={{
               marginTop: '12px',
@@ -289,13 +320,8 @@ export default function CropAdvisor() {
             >
               {outlook.anomaly.toFixed(1)} mm/month
             </p>
-            <p style={{ fontSize: '11px', color: '#475569', margin: '4px 0 0 0' }}>
-              Ensemble forecast · 51 members · uncertainty increases at longer lead
-              times
-            </p>
           </div>
 
-          {/* C: Monthly breakdown */}
           {outlook.monthly.length > 0 && (
             <div style={{ marginTop: '14px' }}>
               <p
@@ -322,15 +348,20 @@ export default function CropAdvisor() {
                     'en',
                     { month: 'short', year: '2-digit' }
                   )
+                  const isOnset = m.month === outlook.onsetMonth
                   return (
                     <div
                       key={m.month}
                       style={{
-                        background: 'rgba(255,255,255,0.35)',
+                        background: isOnset
+                          ? 'rgba(0,255,136,0.25)'
+                          : 'rgba(255,255,255,0.35)',
                         padding: '10px',
                         borderRadius: '10px',
                         textAlign: 'center',
-                        border: '1px solid rgba(0,255,136,0.20)',
+                        border: isOnset
+                          ? '2px solid rgba(0,255,136,0.65)'
+                          : '1px solid rgba(0,255,136,0.20)',
                       }}
                     >
                       <div
@@ -341,6 +372,7 @@ export default function CropAdvisor() {
                         }}
                       >
                         {monthName}
+                        {isOnset && ' 🌱'}
                       </div>
                       <div
                         style={{
@@ -357,18 +389,53 @@ export default function CropAdvisor() {
                   )
                 })}
               </div>
-              <p
+
+              {/* Onset summary */}
+              <div
                 style={{
-                  fontSize: '10px',
-                  color: '#475569',
-                  marginTop: '8px',
-                  fontStyle: 'italic',
+                  marginTop: '12px',
+                  background: 'rgba(0,255,136,0.12)',
+                  border: '1px solid rgba(0,255,136,0.40)',
+                  padding: '12px',
+                  borderRadius: '10px',
                 }}
               >
-                ⓘ Seasonal forecasts indicate the likely direction of rainfall
-                (wetter/drier than normal), not exact amounts. Always confirm with
-                MSD Zimbabwe.
-              </p>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#0f3d20',
+                    margin: 0,
+                  }}
+                >
+                  🌱 Expected rainfall onset:{' '}
+                  {outlook.onsetMonth
+                    ? new Date(outlook.onsetMonth + '-01').toLocaleDateString(
+                        'en',
+                        { month: 'long', year: 'numeric' }
+                      )
+                    : 'Not detected in forecast period'}
+                </p>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#1f2937',
+                    margin: '6px 0 0 0',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <strong>Growing window available:</strong> approximately{' '}
+                  <strong>{daysAvailable} days</strong> until end of season
+                  (~30 April).
+                  {daysAvailable < 100 &&
+                    ' This is a short season — choose early/ultra-early varieties.'}
+                  {daysAvailable >= 100 &&
+                    daysAvailable < 130 &&
+                    ' Medium season — early and medium varieties will fit.'}
+                  {daysAvailable >= 130 &&
+                    ' Full season — even late-maturing varieties can be considered.'}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -563,7 +630,7 @@ export default function CropAdvisor() {
                 textTransform: 'uppercase',
               }}
             >
-              Natural Region
+              Growing window
             </p>
             <p
               style={{
@@ -573,7 +640,7 @@ export default function CropAdvisor() {
                 margin: '4px 0 0 0',
               }}
             >
-              {zone}
+              ~{daysAvailable} days
             </p>
           </div>
         </div>
@@ -642,19 +709,6 @@ export default function CropAdvisor() {
               Reset to live data
             </button>
           )}
-          <p
-            style={{
-              fontSize: '11px',
-              color: '#475569',
-              marginTop: '8px',
-              marginBottom: 0,
-              fontStyle: 'italic',
-            }}
-          >
-            Tip: Drag the slider to see how crop suitability changes with different
-            rainfall scenarios. Real seasonal rainfall in Zimbabwe is typically
-            450–1050 mm.
-          </p>
         </div>
 
         {isDrought && (
@@ -677,6 +731,7 @@ export default function CropAdvisor() {
         )}
       </div>
 
+      {/* Recommended with varieties */}
       <div style={cardStyle}>
         <h3
           style={{
@@ -693,13 +748,13 @@ export default function CropAdvisor() {
         <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
           {usingFallback
             ? 'No crops match your region and rainfall exactly. These drought-tolerant alternatives are the safest options.'
-            : 'Click any crop to see step-by-step growing instructions'}
+            : 'Click any crop to see matching varieties and step-by-step guidance'}
         </p>
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '12px',
             marginTop: '14px',
           }}
@@ -708,6 +763,7 @@ export default function CropAdvisor() {
             <CropCard
               key={crop.name}
               crop={crop}
+              daysAvailable={daysAvailable}
               isOpen={openCrop === crop.name}
               onToggle={() =>
                 setOpenCrop(openCrop === crop.name ? null : crop.name)
@@ -772,8 +828,9 @@ export default function CropAdvisor() {
         }}
       >
         Advisory based on Zimbabwe Natural Regions (NR I–V), FAO crop water
-        requirements, and ECMWF SEAS5 seasonal forecasts. Sources: Farmonaut (2026),
-        AGRITEX Zimbabwe, MSD Zimbabwe.
+        requirements, ECMWF SEAS5 seasonal forecasts, and variety maturity data from
+        Seed Co, DR&SS and ICRISAT. Sources: Farmonaut (2026), AGRITEX Zimbabwe, MSD
+        Zimbabwe.
       </p>
     </div>
   )
@@ -781,10 +838,12 @@ export default function CropAdvisor() {
 
 function CropCard({
   crop,
+  daysAvailable,
   isOpen,
   onToggle,
 }: {
   crop: CropRequirement
+  daysAvailable: number
   isOpen: boolean
   onToggle: () => void
 }) {
@@ -794,6 +853,8 @@ function CropCard({
     high: '#22c55e',
     'very-high': '#16803c',
   }
+
+  const matchingVarieties: CropVariety[] = matchVarietyToSeason(crop, daysAvailable)
 
   return (
     <div
@@ -835,7 +896,8 @@ function CropCard({
               marginTop: '4px',
             }}
           >
-            Needs {crop.minRainfall}–{crop.maxRainfall} mm · {crop.growingDays} days
+            Needs {crop.minRainfall}–{crop.maxRainfall} mm ·{' '}
+            {matchingVarieties.length} matching varieties
           </div>
           <div
             style={{
@@ -873,11 +935,118 @@ function CropCard({
             {crop.description}
           </p>
 
+          {/* Varieties matching the growing window */}
+          {matchingVarieties.length > 0 && (
+            <>
+              <h4
+                style={{
+                  fontSize: '12px',
+                  color: '#0f3d20',
+                  margin: '12px 0 8px 0',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                🌱 Recommended varieties for {daysAvailable}-day window
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {matchingVarieties.map((v) => (
+                  <div
+                    key={v.name}
+                    style={{
+                      background: 'rgba(0,255,136,0.10)',
+                      border: '1px solid rgba(0,255,136,0.35)',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: '#0f3d20',
+                      }}
+                    >
+                      {v.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#334155',
+                        marginTop: '2px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {v.maturityDays} days · {v.maturityClass} · drought tolerance:{' '}
+                      {v.droughtTolerance}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#1f2937',
+                        marginTop: '6px',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {v.note}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11px',
+                        color: '#16803c',
+                        marginTop: '4px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Yield potential: {v.yieldPotential}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {matchingVarieties.length === 0 && crop.varieties.length > 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                background: 'rgba(220,38,38,0.10)',
+                border: '1px solid rgba(220,38,38,0.35)',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#7f1d1d',
+                lineHeight: 1.6,
+              }}
+            >
+              ⚠️ None of the listed varieties fit in a {daysAvailable}-day growing
+              window. Consider earlier-maturing alternatives or irrigation.
+            </div>
+          )}
+
+          {crop.varieties.length === 0 && (
+            <div
+              style={{
+                marginTop: '12px',
+                background: 'rgba(255,248,225,0.75)',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#7a4a1f',
+                lineHeight: 1.6,
+              }}
+            >
+              ℹ️ Variety data not yet available for this crop. Consult your local
+              AGRITEX officer for recommended varieties.
+            </div>
+          )}
+
           <h4
             style={{
               fontSize: '12px',
               color: '#0f3d20',
-              margin: '12px 0 8px 0',
+              margin: '14px 0 8px 0',
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
