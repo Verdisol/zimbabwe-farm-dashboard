@@ -47,6 +47,15 @@ type TerrainInfo = {
   slopeAdvice: string
 }
 
+type PlantingStrategy = {
+  headline: string
+  plantingWindow: string
+  irrigationBridging: string
+  varietyAdvice: string
+  irrigationNeeded: boolean
+  irrigationFrequency: string
+}
+
 async function fetchSeasonalOutlook(
   lat: number,
   lng: number
@@ -179,6 +188,80 @@ async function fetchTerrain(
   }
 }
 
+function computePlantingStrategy(
+  outlook: SeasonalOutlook | null,
+  locationName: string
+): PlantingStrategy {
+  if (!outlook) {
+    return {
+      headline: 'Await seasonal forecast',
+      plantingWindow: 'Await forecast data to plan planting.',
+      irrigationBridging: 'Await forecast data.',
+      varietyAdvice: 'Await forecast data.',
+      irrigationNeeded: false,
+      irrigationFrequency: '',
+    }
+  }
+
+  const onsetLabel = outlook.onsetMonth
+    ? new Date(outlook.onsetMonth + '-01').toLocaleDateString('en', {
+        month: 'long',
+        year: 'numeric',
+      })
+    : 'uncertain'
+
+  const isDry = outlook.status === 'below-normal'
+  const isWet = outlook.status === 'above-normal'
+  const days = outlook.daysAvailable
+
+  // Headline
+  let headline = 'Plan for a normal season'
+  if (isDry) headline = 'Drought year — plant with irrigation backup'
+  if (isWet) headline = 'Good rainfall year — full season available'
+
+  // Planting window
+  let plantingWindow = ''
+  if (outlook.onsetMonth) {
+    plantingWindow = `Plant with the first effective rains in ${onsetLabel}. If the onset is delayed, prepare planting basins (15cm × 15cm × 15cm) and pot-hole to capture the first rain.`
+  } else {
+    plantingWindow = `Onset is uncertain. Prepare planting basins now (15cm × 15cm × 15cm) and plant immediately after any 30mm+ rainfall event.`
+  }
+
+  // Irrigation bridging
+  let irrigationBridging = ''
+  let irrigationNeeded = false
+  let irrigationFrequency = ''
+
+  if (isDry) {
+    irrigationNeeded = true
+    irrigationFrequency = 'Every 5–7 days'
+    irrigationBridging = `Rains are below normal. If you plant and a dry spell exceeds 7 days, irrigate 20–25mm every 5–7 days to keep plants alive. For severe wilting, pot-hole between plants and apply 1–2 litres per plant. Avoid top-dressing nitrogen during drought — it can burn plants. When rains return, plants will use the nutrients already in the soil.`
+  } else if (isWet) {
+    irrigationBridging = `Good rainfall expected. No bridging irrigation needed unless a dry spell exceeds 14 days. Focus on drainage in low-lying fields.`
+  } else {
+    irrigationBridging = `Normal rainfall expected. Monitor 10-day forecasts. If a dry spell exceeds 10 days during flowering, apply supplementary irrigation.`
+  }
+
+  // Variety advice — match flowering window to rainfall peak
+  let varietyAdvice = ''
+  if (isDry) {
+    varietyAdvice = `Choose ultra-early or early varieties that flower before the driest months. For maize: SC 449 (90 days) or SC 419 (120 days) — they flower in January when rains are more reliable. For sorghum: Macia (115 days) or SV 2 (110 days). These escape late-season drought.`
+  } else if (isWet && days >= 140) {
+    varietyAdvice = `Full season available (~${days} days). You can plant late-maturing, high-yielding varieties. For maize: SC 727 (158 days) or SC 719 (150 days) — Zimbabwe's top yielders. For wheat (winter irrigated): SC Sekuru or SC Smart.`
+  } else {
+    varietyAdvice = `Growing window ~${days} days. Choose medium-maturing varieties that fit the season. For maize: SC 633 (140 days) or SC 419 (120 days). For tobacco: KRK 26 or T 66.`
+  }
+
+  return {
+    headline,
+    plantingWindow,
+    irrigationBridging,
+    varietyAdvice,
+    irrigationNeeded,
+    irrigationFrequency,
+  }
+}
+
 export default function CropAdvisor() {
   const [location, setLocation] = useState<District>(districts[0])
   const [rainfall30d, setRainfall30d] = useState<number | null>(null)
@@ -245,7 +328,6 @@ export default function CropAdvisor() {
   const region = getNaturalRegion(zone)
   const effectiveRainfall = simulator ?? seasonalRainfall ?? 0
 
-  // Dynamically derive drought status from the effective rainfall for simulation
   const effectiveDroughtStatus =
     effectiveRainfall < 250 ? 'drought' : droughtStatus
 
@@ -270,6 +352,8 @@ export default function CropAdvisor() {
     (c) => !displayedRecommended.find((r) => r.name === c.name)
   )
 
+  const strategy = computePlantingStrategy(outlook, location.name)
+
   if (loading) {
     return (
       <div style={cardStyle}>
@@ -290,7 +374,6 @@ export default function CropAdvisor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Blinking footnote styles */}
       <style>{`
         @keyframes footnoteBlink {
           0%, 100% {
@@ -314,7 +397,7 @@ export default function CropAdvisor() {
         }
       `}</style>
 
-      {/* Terrain card */}
+      {/* Terrain */}
       {terrain && (
         <div
           style={{
@@ -624,56 +707,168 @@ export default function CropAdvisor() {
                   )
                 })}
               </div>
-
-              <div
-                style={{
-                  marginTop: '12px',
-                  background: 'rgba(0,255,136,0.12)',
-                  border: '1px solid rgba(0,255,136,0.40)',
-                  padding: '12px',
-                  borderRadius: '10px',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#0f3d20',
-                    margin: 0,
-                  }}
-                >
-                  🌱 Expected rainfall onset:{' '}
-                  {outlook.onsetMonth
-                    ? new Date(outlook.onsetMonth + '-01').toLocaleDateString(
-                        'en',
-                        { month: 'long', year: 'numeric' }
-                      )
-                    : 'Not detected in forecast period'}
-                </p>
-                <p
-                  style={{
-                    fontSize: '12px',
-                    color: '#1f2937',
-                    margin: '6px 0 0 0',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  <strong>Growing window available:</strong> approximately{' '}
-                  <strong>{daysAvailable} days</strong> until end of season
-                  (~30 April).
-                  {daysAvailable < 100 &&
-                    ' This is a short season — choose early/ultra-early varieties.'}
-                  {daysAvailable >= 100 &&
-                    daysAvailable < 130 &&
-                    ' Medium season — early and medium varieties will fit.'}
-                  {daysAvailable >= 130 &&
-                    ' Full season — even late-maturing varieties can be considered.'}
-                </p>
-              </div>
             </div>
           )}
         </div>
       )}
+
+      {/* Planting Strategy — NEW */}
+      <div
+        style={{
+          ...cardStyle,
+          borderLeft: '6px solid #f59e0b',
+          background: 'rgba(245,158,11,0.08)',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '15px',
+            color: '#78350f',
+            margin: 0,
+            fontWeight: 700,
+            textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+          }}
+        >
+          🌱 Planting Strategy for {location.name}
+        </h3>
+        <p style={{ fontSize: '12px', color: '#334155', marginTop: '4px' }}>
+          Based on the seasonal forecast — what to do now, and what to do if rains are delayed
+        </p>
+
+        <div
+          style={{
+            marginTop: '14px',
+            background: 'rgba(255,255,255,0.45)',
+            border: '1px solid rgba(245,158,11,0.35)',
+            padding: '14px',
+            borderRadius: '12px',
+          }}
+        >
+          <p
+            style={{
+              fontSize: '14px',
+              fontWeight: 800,
+              color: '#78350f',
+              margin: 0,
+            }}
+          >
+            {strategy.headline}
+          </p>
+        </div>
+
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div
+            style={{
+              background: 'rgba(255,248,225,0.75)',
+              padding: '12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                color: '#7a4a1f',
+                margin: 0,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              📅 Planting window
+            </p>
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#1f2937',
+                margin: '6px 0 0 0',
+                lineHeight: 1.6,
+              }}
+            >
+              {strategy.plantingWindow}
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: strategy.irrigationNeeded
+                ? 'rgba(14,165,233,0.12)'
+                : 'rgba(0,255,136,0.08)',
+              border: strategy.irrigationNeeded
+                ? '1px solid rgba(14,165,233,0.40)'
+                : '1px solid rgba(0,255,136,0.30)',
+              padding: '12px',
+              borderRadius: '10px',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                color: strategy.irrigationNeeded ? '#0c4a6e' : '#0f3d20',
+                margin: 0,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              💧 Bridging irrigation
+            </p>
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#1f2937',
+                margin: '6px 0 0 0',
+                lineHeight: 1.6,
+              }}
+            >
+              {strategy.irrigationBridging}
+            </p>
+            {strategy.irrigationFrequency && (
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#0c4a6e',
+                  margin: '6px 0 0 0',
+                  fontWeight: 700,
+                }}
+              >
+                Frequency: {strategy.irrigationFrequency}
+              </p>
+            )}
+          </div>
+
+          <div
+            style={{
+              background: 'rgba(0,255,136,0.08)',
+              padding: '12px',
+              borderRadius: '10px',
+              border: '1px solid rgba(0,255,136,0.30)',
+            }}
+          >
+            <p
+              style={{
+                fontSize: '11px',
+                color: '#0f3d20',
+                margin: 0,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}
+            >
+              🌾 Variety advice
+            </p>
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#1f2937',
+                margin: '6px 0 0 0',
+                lineHeight: 1.6,
+              }}
+            >
+              {strategy.varietyAdvice}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Irrigation Advisory */}
       {needsIrrigation && (
@@ -992,8 +1187,9 @@ export default function CropAdvisor() {
               lineHeight: 1.6,
             }}
           >
-            ⚠️ <strong>Drought conditions detected.</strong> Below-average rainfall
-            expected. Only drought-tolerant crops are shown.
+            ⚠️ <strong>Drought conditions detected.</strong> See the Planting Strategy
+            above for bridging irrigation advice. Only drought-tolerant crops are
+            shown below.
           </div>
         )}
       </div>
@@ -1087,7 +1283,7 @@ export default function CropAdvisor() {
         </div>
       )}
 
-      {/* Blinking footnote with white text shadow */}
+      {/* Blinking footnote */}
       <p
         className="blinking-footnote"
         style={{
