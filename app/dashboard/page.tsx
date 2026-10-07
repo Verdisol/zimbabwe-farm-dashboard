@@ -13,7 +13,6 @@ import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
 import LocationPicker from './LocationPicker'
-import ExportButton from './ExportButton'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
@@ -75,17 +74,6 @@ export default function DashboardPage() {
         <TopBar />
 
         <main style={{ padding: '24px', flex: 1 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              marginBottom: '16px',
-              gap: '10px',
-            }}
-          >
-            <ExportButton targetId="export-area" />
-          </div>
-
           <div id="export-area">
             {activeTab === 'overview' && <OverviewTab language={language} />}
             {activeTab === 'map' && <MapTab language={language} />}
