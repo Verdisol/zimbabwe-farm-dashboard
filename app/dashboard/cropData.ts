@@ -20,6 +20,8 @@ export type CropRequirement = {
   description: string
   plantingSteps: string[]
   varieties: CropVariety[]
+  peakWaterMmPerWeek: number
+  irrigationNote: string
 }
 
 export type NaturalRegion = {
@@ -34,11 +36,6 @@ export type NaturalRegion = {
   description: string
 }
 
-// ------------------------------------------------------------------
-// Zimbabwe Natural Regions (NR I–V)
-// Source: Farmonaut (2026). "Natural Farming Regions in Zimbabwe:
-// 2025 Essential Guide", and Zimbabwe AGRITEX classifications.
-// ------------------------------------------------------------------
 export const naturalRegions: Record<NaturalRegionKey, NaturalRegion> = {
   I: {
     key: 'I',
@@ -102,9 +99,6 @@ export const naturalRegions: Record<NaturalRegionKey, NaturalRegion> = {
   },
 }
 
-// ------------------------------------------------------------------
-// District → Natural Region mapping
-// ------------------------------------------------------------------
 const districtToRegion: Record<string, NaturalRegionKey> = {
   Harare: 'II',
   Chitungwiza: 'II',
@@ -145,11 +139,6 @@ export function getNaturalRegion(key: NaturalRegionKey): NaturalRegion {
   return naturalRegions[key]
 }
 
-// ------------------------------------------------------------------
-// Crop requirements with Zimbabwean varieties
-// Sources: Seed Co (2026), DR&SS Zimbabwe, ICRISAT Bulawayo,
-// Zimbabwe Farmers Union variety guides
-// ------------------------------------------------------------------
 export const crops: CropRequirement[] = [
   {
     name: 'Maize',
@@ -186,14 +175,33 @@ export const crops: CropRequirement[] = [
         note: 'Very early-maturing hybrid with strong stay-green and good cob disease tolerance.',
       },
       {
-        name: 'DR-A (CIMMYT-Zimbabwe)',
-        maturityDays: 130,
+        name: 'SC 633 (Seed Co)',
+        maturityDays: 140,
         maturityClass: 'medium',
-        droughtTolerance: 'high',
-        yieldPotential: 'Up to 6.8 t/ha',
-        note: 'Bred for heat and drought stress tolerance — good for marginal areas.',
+        droughtTolerance: 'medium',
+        yieldPotential: 'Up to 15 t/ha under favourable conditions',
+        note: 'Medium maturing, high yielding hybrid. Best under full-season rainfall.',
+      },
+      {
+        name: 'SC 719 (Seed Co)',
+        maturityDays: 150,
+        maturityClass: 'late',
+        droughtTolerance: 'low',
+        yieldPotential: 'Up to 16 t/ha under favourable conditions',
+        note: 'Top late-maturing hybrid. Needs full season (≥150 days) and good rainfall.',
+      },
+      {
+        name: 'SC 727 (Seed Co)',
+        maturityDays: 158,
+        maturityClass: 'late',
+        droughtTolerance: 'low',
+        yieldPotential: 'Highest yielder in Zimbabwe late group',
+        note: 'Best yielder in Zimbabwe. Requires full season and reliable rainfall. NOT for dry regions.',
       },
     ],
+    peakWaterMmPerWeek: 60,
+    irrigationNote:
+      'Peak water demand is 60–70 mm/week during flowering and grain filling. Irrigate 2–3 times per week at 20–30 mm per application.',
   },
   {
     name: 'Sorghum',
@@ -230,6 +238,9 @@ export const crops: CropRequirement[] = [
         note: 'Early maturity was the main reason farmers adopted it in Zimbabwe dry areas.',
       },
     ],
+    peakWaterMmPerWeek: 45,
+    irrigationNote:
+      'Needs 400–500 mm total. Supplement during flowering if dry spell exceeds 10 days.',
   },
   {
     name: 'Pearl Millet',
@@ -255,9 +266,12 @@ export const crops: CropRequirement[] = [
         maturityClass: 'ultra-early',
         droughtTolerance: 'very-high',
         yieldPotential: 'Up to 2 t/ha in communal areas',
-        note: 'Released 1992. High tillering, matures in 80-90 days. Recommended for NR IV and V.',
+        note: 'Released 1992. High tillering, matures in 80–90 days. Recommended for NR IV and V.',
       },
     ],
+    peakWaterMmPerWeek: 35,
+    irrigationNote:
+      'Very drought-tolerant. Supplementary irrigation rarely needed unless dry spell exceeds 14 days.',
   },
   {
     name: 'Finger Millet',
@@ -277,6 +291,9 @@ export const crops: CropRequirement[] = [
       'Harvest when heads mature and grains shatter easily',
     ],
     varieties: [],
+    peakWaterMmPerWeek: 40,
+    irrigationNote:
+      'Needs 500–1000 mm total. Irrigate if dry spell occurs during flowering.',
   },
   {
     name: 'Groundnuts',
@@ -302,7 +319,7 @@ export const crops: CropRequirement[] = [
         maturityClass: 'ultra-early',
         droughtTolerance: 'high',
         yieldPotential: 'Up to 4 t/ha pod yield',
-        note: 'Very short season (85-100 days). Escapes drought. Ideal for warmer drier areas.',
+        note: 'Very short season (85–100 days). Escapes drought. Ideal for warmer drier areas.',
       },
       {
         name: 'Nyanda',
@@ -320,7 +337,18 @@ export const crops: CropRequirement[] = [
         yieldPotential: 'Up to 3.2 t/ha pod yield',
         note: 'Short-medium season. Good resistance to early leaf spot. Ideal for warmer drier areas.',
       },
+      {
+        name: 'Flamingo',
+        maturityDays: 175,
+        maturityClass: 'late',
+        droughtTolerance: 'low',
+        yieldPotential: 'Up to 3 t/ha',
+        note: 'Long season variety (150–200 days). Only for full-season areas with reliable rainfall.',
+      },
     ],
+    peakWaterMmPerWeek: 50,
+    irrigationNote:
+      'Critical stage: flowering to pod fill. Needs 500–600 mm total. Irrigate if dry spell exceeds 7 days.',
   },
   {
     name: 'Cowpeas',
@@ -345,7 +373,7 @@ export const crops: CropRequirement[] = [
         maturityClass: 'ultra-early',
         droughtTolerance: 'very-high',
         yieldPotential: 'Up to 2.5 t/ha',
-        note: 'Matures in 75-85 days. Good pod clearance and uniform maturity. Recommended for NR III, IV, V.',
+        note: 'Matures in 75–85 days. Good pod clearance and uniform maturity. Recommended for NR III, IV, V.',
       },
       {
         name: 'CBC1',
@@ -356,6 +384,9 @@ export const crops: CropRequirement[] = [
         note: 'Fits areas with short rains in NR III, IV, V. Leaves and seeds both edible.',
       },
     ],
+    peakWaterMmPerWeek: 40,
+    irrigationNote:
+      'Needs 300–500 mm total. Drought-tolerant but responds to irrigation during flowering.',
   },
   {
     name: 'Sunflower',
@@ -391,13 +422,12 @@ export const crops: CropRequirement[] = [
         note: 'Improved tolerance to leaf diseases and moisture deficit stress.',
       },
     ],
+    peakWaterMmPerWeek: 50,
+    irrigationNote:
+      'Needs 400–600 mm total. Critical stages: flowering and seed fill.',
   },
 ]
 
-/**
- * Recommend crops based on estimated seasonal rainfall (mm),
- * drought status, and natural region.
- */
 export function getCropAdvice(
   seasonalRainfall: number,
   droughtStatus: string,
@@ -423,15 +453,44 @@ export function getCropAdvice(
   return pool.filter((c) => seasonalRainfall >= c.minRainfall * 0.7)
 }
 
-/**
- * Given a rainfall onset date and current date, estimate remaining days
- * until the end of the rainfall season (assumed to end around April 30).
- * Returns null if the crop cannot fit.
- */
 export function matchVarietyToSeason(
   crop: CropRequirement,
   daysAvailable: number
 ): CropVariety[] {
   if (!crop.varieties || crop.varieties.length === 0) return []
   return crop.varieties.filter((v) => v.maturityDays <= daysAvailable)
+}
+
+/**
+ * Determine whether supplementary irrigation is recommended,
+ * given the seasonal outlook and crop water needs.
+ */
+export function irrigationAdvice(
+  crop: CropRequirement,
+  monthlyRain: number[],
+  regionKey: NaturalRegionKey
+): { needed: boolean; message: string } {
+  const isDryRegion = regionKey === 'IV' || regionKey === 'V'
+
+  // Detect dry spells: any month in the forecast under 40mm
+  const drySpell = monthlyRain.some((r) => r < 40)
+
+  if (isDryRegion && crop.droughtTolerance === 'low') {
+    return {
+      needed: true,
+      message: `Maize or similar low-drought-tolerant crops are risky in NR ${regionKey}. Supplementary irrigation is strongly recommended. Peak water need: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+    }
+  }
+
+  if (drySpell && crop.droughtTolerance !== 'very-high') {
+    return {
+      needed: true,
+      message: `Dry spells detected in the forecast. Consider supplementary irrigation during flowering. Peak water need: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+    }
+  }
+
+  return {
+    needed: false,
+    message: `Rainfall looks sufficient. Peak water need if irrigation is used: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+  }
 }
