@@ -24,6 +24,9 @@ export default function Home() {
       const data = await res.json()
 
       if (res.ok) {
+        // Save email so subscription status card can look it up
+        localStorage.setItem('farmerEmail', email)
+
         setMessage('✅ Logged in! Redirecting...')
         toast.success('Welcome back! 🌾', {
           description: 'Redirecting to your dashboard...',
@@ -63,7 +66,7 @@ export default function Home() {
     >
       <div
         style={{
-          background: 'rgba(255,255,255,0.96)',
+          background: 'rgba(255,255,255,0.30)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: '1px solid rgba(255,255,255,0.7)',
@@ -78,9 +81,10 @@ export default function Home() {
           style={{
             fontSize: '28px',
             fontWeight: 700,
-            color: '#1f2937',
+            color: '#ffffff',
             textAlign: 'center',
             margin: '0 0 8px 0',
+            textShadow: '0 2px 6px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9)',
           }}
         >
           Welcome Back
@@ -88,23 +92,28 @@ export default function Home() {
         <p
           style={{
             fontSize: '14px',
-            color: '#64748b',
+            color: 'rgba(255,255,255,0.95)',
             textAlign: 'center',
             margin: '0 0 28px 0',
+            textShadow: '0 1px 4px rgba(0,0,0,0.85)',
           }}
         >
           Sign in to your dashboard
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+        >
           <div>
             <label
               style={{
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#1f2937',
+                color: '#ffffff',
                 marginBottom: '6px',
+                textShadow: '0 1px 4px rgba(0,0,0,0.85)',
               }}
             >
               Email or Username
@@ -136,8 +145,9 @@ export default function Home() {
                 display: 'block',
                 fontSize: '14px',
                 fontWeight: 600,
-                color: '#1f2937',
+                color: '#ffffff',
                 marginBottom: '6px',
+                textShadow: '0 1px 4px rgba(0,0,0,0.85)',
               }}
             >
               Password
@@ -171,11 +181,27 @@ export default function Home() {
               fontSize: '14px',
             }}
           >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1f2937' }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#ffffff',
+                textShadow: '0 1px 4px rgba(0,0,0,0.85)',
+              }}
+            >
               <input type="checkbox" />
               Remember me
             </label>
-            <a href="/forgot" style={{ color: '#16803c', textDecoration: 'none', fontWeight: 500 }}>
+            <a
+              href="/forgot"
+              style={{
+                color: '#c8ffd8',
+                textDecoration: 'none',
+                fontWeight: 600,
+                textShadow: '0 1px 4px rgba(0,0,0,0.85)',
+              }}
+            >
               Forgot password?
             </a>
           </div>
@@ -192,7 +218,7 @@ export default function Home() {
               fontSize: '16px',
               fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: '0 4px 12px rgba(22,128,60,0.25)',
+              boxShadow: '0 4px 12px rgba(22,128,60,0.45)',
               marginTop: '4px',
             }}
           >
@@ -206,16 +232,33 @@ export default function Home() {
               textAlign: 'center',
               marginTop: '16px',
               fontSize: '14px',
-              color: message.startsWith('✅') ? '#16803c' : '#dc2626',
+              color: message.startsWith('✅') ? '#c8ffd8' : '#fecaca',
+              textShadow: '0 1px 4px rgba(0,0,0,0.85)',
+              fontWeight: 600,
             }}
           >
             {message}
           </p>
         )}
 
-        <p style={{ textAlign: 'center', marginTop: '24px', color: '#64748b', fontSize: '14px' }}>
+        <p
+          style={{
+            textAlign: 'center',
+            marginTop: '24px',
+            color: 'rgba(255,255,255,0.95)',
+            fontSize: '14px',
+            textShadow: '0 1px 4px rgba(0,0,0,0.85)',
+          }}
+        >
           New here?{' '}
-          <a href="/register" style={{ color: '#16803c', fontWeight: 600, textDecoration: 'none' }}>
+          <a
+            href="/register"
+            style={{
+              color: '#c8ffd8',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
             Create an account
           </a>
         </p>
