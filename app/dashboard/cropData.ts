@@ -316,4 +316,317 @@ export const crops: CropRequirement[] = [
     growingConditions: {
       optimalTempMin: 18, optimalTempMax: 28, frostSensitive: true,
       sunlightHours: 6, humidityMin: 50, humidityMax: 70,
-      windTolerant: false, offSeasonPossible: true
+      windTolerant: false, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Butternuts',
+    minRainfall: 350, maxRainfall: 550, optimalRainfall: 450,
+    droughtTolerance: 'medium', growingDays: 110,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Warm-season squash. Can be grown March–August and late July–mid November.',
+    plantingSteps: [
+      'Sow directly or transplant after frost risk',
+      'Space 1m between rows, 50cm within rows',
+      'Incorporate organic matter before planting',
+      'Irrigate regularly during flowering and fruit development',
+      'Control aphids, powdery mildew, squash bugs',
+      'Harvest when fruits hard-shelled, 80–120 days',
+    ],
+    varieties: [
+      { name: 'Waltham', maturityDays: 100, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Standard butternut variety.' },
+    ],
+    peakWaterMmPerWeek: 45,
+    irrigationNote: 'Drip irrigation effective. Regular watering during flowering and fruit fill.',
+    growingConditions: {
+      optimalTempMin: 18, optimalTempMax: 30, frostSensitive: true,
+      sunlightHours: 6, humidityMin: 40, humidityMax: 70,
+      windTolerant: false, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+  },
+  {
+    name: 'Cabbage',
+    minRainfall: 350, maxRainfall: 500, optimalRainfall: 400,
+    droughtTolerance: 'medium', growingDays: 90,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Cool-season leafy vegetable. Grown year-round in Zimbabwe, best in winter.',
+    plantingSteps: [
+      'Start seedlings in nursery 4–5 weeks before transplanting',
+      'Transplant at 4–6 leaf stage',
+      'Space 60cm × 45cm',
+      'Apply nitrogen-rich fertilizer',
+      'Control diamondback moth and aphids',
+      'Harvest when heads firm',
+    ],
+    varieties: [
+      { name: 'Star 3301', maturityDays: 85, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Popular open-pollinated variety.' },
+    ],
+    peakWaterMmPerWeek: 40,
+    irrigationNote: 'Regular watering. Avoid waterlogging.',
+    growingConditions: {
+      optimalTempMin: 15, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 5, humidityMin: 50, humidityMax: 80,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Rape',
+    minRainfall: 300, maxRainfall: 450, optimalRainfall: 380,
+    droughtTolerance: 'medium', growingDays: 60,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Fast-growing leafy vegetable. Cold-tolerant, does well in winter.',
+    plantingSteps: [
+      'Direct sow or transplant',
+      'Thin to 15–20cm spacing',
+      'Apply nitrogen fertilizer',
+      'Control aphids and caterpillars',
+      'Harvest leaves continuously',
+    ],
+    varieties: [
+      { name: 'Giant Essex', maturityDays: 55, maturityClass: 'early', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Standard rape variety.' },
+    ],
+    peakWaterMmPerWeek: 35,
+    irrigationNote: 'Regular light irrigation.',
+    growingConditions: {
+      optimalTempMin: 12, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 5, humidityMin: 50, humidityMax: 80,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Covo',
+    minRainfall: 300, maxRainfall: 450, optimalRainfall: 380,
+    droughtTolerance: 'medium', growingDays: 55,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Leafy green, fast-growing. Similar to rape but with broader leaves.',
+    plantingSteps: [
+      'Direct sow or transplant',
+      'Thin to 20cm spacing',
+      'Apply nitrogen fertilizer',
+      'Harvest leaves continuously',
+    ],
+    varieties: [],
+    peakWaterMmPerWeek: 35,
+    irrigationNote: 'Regular light irrigation.',
+    growingConditions: {
+      optimalTempMin: 12, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 5, humidityMin: 50, humidityMax: 80,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Tsunga',
+    minRainfall: 300, maxRainfall: 450, optimalRainfall: 380,
+    droughtTolerance: 'medium', growingDays: 65,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Mustard greens. Cold-tolerant, best yields April–August. Pest-tolerant due to hot taste.',
+    plantingSteps: [
+      'Direct sow, 0.5–1cm depth',
+      'Thin to 10,000–16,000 plants/ha',
+      'Apply organic manure for best leaf quality',
+      'Harvest leaves 7–10cm long for best taste',
+      'Harvest continuously for 6–8 weeks',
+    ],
+    varieties: [
+      { name: 'Tsunga Mustard', maturityDays: 55, maturityClass: 'early', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Can be planted all year round. Best April–August.' },
+    ],
+    peakWaterMmPerWeek: 35,
+    irrigationNote: 'Regular light irrigation.',
+    growingConditions: {
+      optimalTempMin: 12, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 5, humidityMin: 50, humidityMax: 80,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Peas (Mangetout/Sugar snap)',
+    minRainfall: 400, maxRainfall: 600, optimalRainfall: 500,
+    droughtTolerance: 'low', growingDays: 90,
+    bestRegions: ['I', 'II'],
+    description: 'Winter horticulture crop. High international demand in EU market when other suppliers exit. Plant Feb–May.',
+    plantingSteps: [
+      'Plant mid-February to May for EU window',
+      'Space 30cm between rows',
+      'Apply basal fertilizer at planting',
+      'Stake or trellis for climbing varieties',
+      'Harvest 8 weeks after planting',
+      'Harvest over 4–5 weeks',
+    ],
+    varieties: [
+      { name: 'Mangetout', maturityDays: 60, maturityClass: 'early', droughtTolerance: 'low', yieldPotential: 'High export value', note: 'Harvested flat pod. EU demand Feb–May.' },
+      { name: 'Sugar snap', maturityDays: 65, maturityClass: 'early', droughtTolerance: 'low', yieldPotential: 'High export value', note: 'Plump pod. Same planting window.' },
+    ],
+    peakWaterMmPerWeek: 45,
+    irrigationNote: 'Regular watering. Drip preferred. Avoid waterlogging.',
+    growingConditions: {
+      optimalTempMin: 10, optimalTempMax: 22, frostSensitive: false,
+      sunlightHours: 6, humidityMin: 50, humidityMax: 75,
+      windTolerant: false, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Feb', 'Mar', 'Apr', 'May'],
+  },
+  {
+    name: 'Onions',
+    minRainfall: 350, maxRainfall: 500, optimalRainfall: 420,
+    droughtTolerance: 'medium', growingDays: 150,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'High-value horticulture. Grown year-round under irrigation. High demand from Mozambique.',
+    plantingSteps: [
+      'Start seedlings in nursery 6–8 weeks before transplanting',
+      'Transplant when pencil-thick',
+      'Space 10cm × 30cm',
+      'Apply phosphorus-rich basal fertilizer',
+      'Stop irrigation 2 weeks before harvest',
+      'Cure bulbs in field 1–2 weeks before storage',
+    ],
+    varieties: [
+      { name: 'White King', maturityDays: 140, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Popular white onion. Sold at US$3–5 per 10kg pocket.' },
+      { name: 'Red King', maturityDays: 145, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Red onion. Sold at US$6–9 per 10kg pocket.' },
+    ],
+    peakWaterMmPerWeek: 40,
+    irrigationNote: 'Drip or furrow. Reduce watering as bulbs mature.',
+    growingConditions: {
+      optimalTempMin: 15, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 6, humidityMin: 50, humidityMax: 70,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Carrots',
+    minRainfall: 350, maxRainfall: 500, optimalRainfall: 450,
+    droughtTolerance: 'medium', growingDays: 100,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'Root vegetable. Cool-season crop, best in winter. High market demand.',
+    plantingSteps: [
+      'Direct sow, 1cm depth, in loose stone-free soil',
+      'Thin to 5–8cm spacing',
+      'Apply phosphorus and potassium fertilizer',
+      'Keep soil moist during root development',
+      'Harvest when roots reach market size',
+    ],
+    varieties: [
+      { name: 'Nantes', maturityDays: 90, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Standard carrot variety.' },
+    ],
+    peakWaterMmPerWeek: 40,
+    irrigationNote: 'Regular watering. Soil must be deep and loose.',
+    growingConditions: {
+      optimalTempMin: 15, optimalTempMax: 25, frostSensitive: false,
+      sunlightHours: 6, humidityMin: 50, humidityMax: 75,
+      windTolerant: true, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+  },
+  {
+    name: 'Potatoes',
+    minRainfall: 450, maxRainfall: 650, optimalRainfall: 550,
+    droughtTolerance: 'medium', growingDays: 110,
+    bestRegions: ['I', 'II', 'III'],
+    description: 'High-demand tuber crop. Zimbabwe imports significant quantities. High market opportunity.',
+    plantingSteps: [
+      'Plant certified disease-free seed potatoes',
+      'Space 30cm × 75cm in furrows',
+      'Apply basal fertilizer',
+      'Hill soil around stems as plants grow',
+      'Control late blight',
+      'Harvest when tops die back',
+    ],
+    varieties: [
+      { name: 'BP1', maturityDays: 100, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'Popular local variety.' },
+      { name: 'Mondial', maturityDays: 110, maturityClass: 'medium', droughtTolerance: 'medium', yieldPotential: 'High', note: 'High-yielding variety.' },
+    ],
+    peakWaterMmPerWeek: 50,
+    irrigationNote: 'Regular watering during tuber bulking.',
+    growingConditions: {
+      optimalTempMin: 15, optimalTempMax: 24, frostSensitive: true,
+      sunlightHours: 6, humidityMin: 50, humidityMax: 75,
+      windTolerant: false, offSeasonPossible: true,
+    },
+    offSeasonMonths: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+  },
+]
+
+/**
+ * Recommend crops based on seasonal rainfall, drought status, and region.
+ * Also suggests off-season crops based on growing conditions.
+ */
+export function getCropAdvice(
+  seasonalRainfall: number,
+  droughtStatus: string,
+  regionKey: NaturalRegionKey
+): CropRequirement[] {
+  const isDrought =
+    droughtStatus === 'drought' || droughtStatus === 'extreme-drought'
+
+  const regionCrops = crops.filter((c) => c.bestRegions.includes(regionKey))
+
+  const otherCrops = crops.filter(
+    (c) =>
+      !regionCrops.find((r) => r.name === c.name) &&
+      seasonalRainfall >= c.minRainfall
+  )
+
+  let pool = [...regionCrops, ...otherCrops]
+
+  if (isDrought) {
+    pool = pool.filter(
+      (c) => c.droughtTolerance === 'high' || c.droughtTolerance === 'very-high'
+    )
+  }
+
+  return pool.filter((c) => seasonalRainfall >= c.minRainfall * 0.7)
+}
+
+/**
+ * Get off-season crops suitable for a region based on growing conditions.
+ * These can be grown with irrigation during dry months.
+ */
+export function getOffSeasonCrops(regionKey: NaturalRegionKey): CropRequirement[] {
+  return crops.filter(
+    (c) =>
+      c.offSeasonMonths.length > 0 &&
+      (c.bestRegions.includes(regionKey) || c.bestRegions.includes('I') || c.bestRegions.includes('II'))
+  )
+}
+
+export function matchVarietyToSeason(
+  crop: CropRequirement,
+  daysAvailable: number
+): CropVariety[] {
+  if (!crop.varieties || crop.varieties.length === 0) return []
+  return crop.varieties.filter((v) => v.maturityDays <= daysAvailable)
+}
+
+export function irrigationAdvice(
+  crop: CropRequirement,
+  monthlyRain: number[],
+  regionKey: NaturalRegionKey
+): { needed: boolean; message: string } {
+  const isDryRegion = regionKey === 'IV' || regionKey === 'V'
+  const drySpell = monthlyRain.some((r) => r < 40)
+
+  if (isDryRegion && crop.droughtTolerance === 'low') {
+    return {
+      needed: true,
+      message: `Low drought tolerance in NR ${regionKey}. Supplementary irrigation strongly recommended. Peak water need: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+    }
+  }
+
+  if (drySpell && crop.droughtTolerance !== 'very-high') {
+    return {
+      needed: true,
+      message: `Dry spells detected. Consider supplementary irrigation during flowering. Peak water need: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+    }
+  }
+
+  return {
+    needed: false,
+    message: `Rainfall looks sufficient. Peak water need if irrigation is used: ~${crop.peakWaterMmPerWeek} mm/week. ${crop.irrigationNote}`,
+  }
+}
