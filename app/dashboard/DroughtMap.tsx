@@ -23,6 +23,7 @@ export default function DroughtMap({
       )
   }, [])
 
+  // Color logic based on the GEE Drought_Score
   const getColor = (score: number) => {
     if (score >= 71) return '#ef4444' // Severe red
     if (score >= 51) return '#f97316' // Alert orange
@@ -30,7 +31,7 @@ export default function DroughtMap({
     return '#22c55e' // Normal green
   }
 
-  // 1. STYLE FUNCTION (Returns only colors)
+  // 1. STYLE FUNCTION (Only returns colors)
   const getStyle = (feature: any) => {
     const score = feature?.properties?.Drought_Score || 0
     return {
@@ -41,7 +42,7 @@ export default function DroughtMap({
     }
   }
 
-  // 2. CLICK/TOOLTIP FUNCTION (Returns events)
+  // 2. INTERACTION FUNCTION (Adds click events and tooltips)
   const onEachFeature = (feature: any, layer: any) => {
     const props = feature.properties
     const score = props.Drought_Score || 0
@@ -102,7 +103,7 @@ export default function DroughtMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
-        {/* Notice: style={getStyle} AND onEachFeature={onEachFeature} */}
+        {/* Notice the two separate props below */}
         <GeoJSON
           data={geoData}
           style={getStyle}
@@ -129,47 +130,19 @@ export default function DroughtMap({
           Drought Score
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '3px',
-              background: '#22c55e',
-            }}
-          />
+          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#22c55e' }} />
           0–30 (Normal)
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '3px',
-              background: '#eab308',
-            }}
-          />
+          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#eab308' }} />
           31–50 (Watch)
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '3px',
-              background: '#f97316',
-            }}
-          />
+          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f97316' }} />
           51–70 (Alert)
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '3px',
-              background: '#ef4444',
-            }}
-          />
+          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444' }} />
           71–100 (Severe)
         </div>
       </div>
