@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getSavedLocation, District, districts } from './locationData'
 
 type MonthRain = { month: string; rain: number }
@@ -105,19 +105,16 @@ function computeStatus(
   }
 }
 
-export default function DroughtMonitor() {
+export default function DroughtMonitor({
+  onStatusChange,
+}: {
+  onStatusChange?: (status: string) => void
+} = {}) {
   const [location, setLocation] = useState<District>(districts[0])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [status, setStatus] = useState<DroughtStatus | null>(null)
   const [monthly, setMonthly] = useState<MonthRain[]>([])
-  const [muted, setMuted] = useState(false)
-
-  // Refs for continuous sound
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const oscillatorRef = useRef<OscillatorNode | null>(null)
-  const gainRef = useRef<GainNode | null>(null)
-  const intervalRef = useRef<number | null>(null)
 
   useEffect(() => {
     const saved = getSavedLocation()
@@ -202,104 +199,22 @@ export default function DroughtMonitor() {
           rain: monthMap.get(k) || 0,
         }))
 
-        setStatus(computeStatus(last12, historicalAvg, historicalStd))
+        const computed = computeStatus(last12, historicalAvg, historicalStd)
+        setStatus(computed)
         setMonthly(last12Months)
         setLoading(false)
+
+        // Broadcast the status to the parent so it can flash the page
+        if (onStatusChange) {
+          onStatusChange(computed.status)
+        }
       })
       .catch((err) => {
         setError(err.message || 'Could not load historical rainfall.')
         setLoading(false)
+        if (onStatusChange) onStatusChange('normal')
       })
-  }, [location])
-
-  // Continuous warning buzzer + full-page flashing
-  useEffect(() => {
-    const isDrought =
-      status?.status === 'drought' || status?.status === 'extreme-drought'
-
-    // Stop any existing buzzer and flashing
-    const cleanup = () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-      if (oscillatorRef.current) {
-        try {
-          oscillatorRef.current.stop()
-          oscillatorRef.current.disconnect()
-        } catch {}
-        oscillatorRef.current = null
-      }
-      if (gainRef.current) {
-        try {
-          gainRef.current.disconnect()
-        } catch {}
-        gainRef.current = null
-      }
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close().catch(() => {})
-        audioCtxRef.current = null
-      }
-      document.body.style.animation = ''
-      document.body.style.boxShadow = ''
-    }
-
-    cleanup()
-
-    if (!isDrought || muted) return
-
-    // Start a continuous warning buzzer
-    const startBuzzer = () => {
-      try {
-        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-        audioCtxRef.current = ctx
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.type = 'square'
-        osc.frequency.value = 220 // Low, harsh warning tone
-        gain.gain.value = 0.15
-        osc.start()
-        oscillatorRef.current = osc
-        gainRef.current = gain
-      } catch (e) {
-        console.log('Audio blocked by browser — click the page once to enable sound')
-      }
-    }
-
-    startBuzzer()
-
-    // Pulse volume up and down for a "buzzing" continuous effect
-    let pulse = 0
-    intervalRef.current = window.setInterval(() => {
-      pulse = (pulse + 1) % 2
-      if (gainRef.current) {
-        try {
-          gainRef.current.gain.value = pulse === 0 ? 0.15 : 0.02
-        } catch {}
-      }
-    }, 400)
-
-    // Add flashing red animation to the whole page
-    const style = document.createElement('style')
-    style.id = 'drought-page-flash'
-    style.innerHTML = `
-      @keyframes droughtPageFlash {
-        0%, 100% { background-color: rgba(220, 38, 38, 0.15); }
-        50% { background-color: rgba(220, 38, 38, 0.35); }
-      }
-    `
-    document.head.appendChild(style)
-    document.body.style.animation = 'droughtPageFlash 0.8s ease-in-out infinite'
-    document.body.style.transition = 'background-color 0.4s'
-
-    return () => {
-      cleanup()
-      const existingStyle = document.getElementById('drought-page-flash')
-      if (existingStyle) existingStyle.remove()
-    }
-  }, [status, muted])
+  }, [location, onStatusChange])
 
   if (loading) {
     return (
@@ -327,51 +242,6 @@ export default function DroughtMonitor() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '900px', margin: '0 auto' }}>
-      {/* Blinking warning banner */}
-      {isDrought && (
-        <div
-          style={{
-            background: isExtreme
-              ? 'linear-gradient(135deg, #7f1d1d, #dc2626)'
-              : 'linear-gradient(135deg, #dc2626, #f97316)',
-            borderRadius: '16px',
-            padding: '20px',
-            border: '3px solid rgba(220, 38, 38, 1)',
-            color: 'white',
-            textAlign: 'center',
-            boxShadow: '0 0 40px rgba(220, 38, 38, 0.9)',
-            animation: 'droughtPageFlash 0.8s ease-in-out infinite',
-          }}
-        >
-          <div style={{ fontSize: '48px', marginBottom: '8px' }}>{status.icon}</div>
-          <div style={{ fontSize: '22px', fontWeight: 800, textShadow: '0 2px 6px rgba(0,0,0,0.5)' }}>
-            {isExtreme ? '🔥 EXTREME DROUGHT EMERGENCY' : '⚠️ DROUGHT WARNING'}
-          </div>
-          <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.95, fontWeight: 600 }}>
-            {location.name} — {status.label}
-          </div>
-          <div style={{ fontSize: '12px', marginTop: '6px', opacity: 0.9 }}>
-            Rainfall is {Math.abs(((status.last12 - status.historicalAvg) / status.historicalAvg) * 100).toFixed(1)}% below the 30-year average.
-          </div>
-          <button
-            onClick={() => setMuted(!muted)}
-            style={{
-              marginTop: '14px',
-              padding: '6px 14px',
-              background: 'rgba(0,0,0,0.35)',
-              color: 'white',
-              border: '1px solid rgba(255,255,255,0.5)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            {muted ? '🔇 Unmute alarm & stop flashing' : '🔊 Mute alarm & stop flashing'}
-          </button>
-        </div>
-      )}
-
       {/* Status card */}
       <div
         style={{
@@ -390,7 +260,7 @@ export default function DroughtMonitor() {
           <div style={{ fontSize: '56px' }}>{status.icon}</div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '12px', color: '#334155', margin: 0, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              Drought / Harvest Status for {location.name}
+              Rainfall-Based Drought Status for {location.name}
             </p>
             <h2 style={{ fontSize: '28px', fontWeight: 800, color: status.color, margin: '4px 0 0 0', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>
               {status.label}
@@ -445,7 +315,7 @@ export default function DroughtMonitor() {
       </div>
 
       <p style={{ fontSize: '11px', color: '#475569', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>
-        Based on 30 years of daily rainfall from Open-Meteo Archive API. Drought classification follows a standardized z-score approach on rolling 12-month totals.
+        Based on 30 years of daily rainfall from Open-Meteo Archive API. Drought classification uses z-score on rolling 12-month totals.
       </p>
     </div>
   )
