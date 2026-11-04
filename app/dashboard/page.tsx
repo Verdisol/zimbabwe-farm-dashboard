@@ -6,6 +6,8 @@ import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
+import DroughtMap from './DroughtMap'
+import DroughtAlert from './DroughtAlert'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
 import Market from './Market'
@@ -146,6 +148,50 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
+function IndexTile({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string
+  color: string
+}) {
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.55)',
+        padding: '12px',
+        borderRadius: '10px',
+        textAlign: 'center',
+      }}
+    >
+      <p
+        style={{
+          fontSize: '10px',
+          color: '#475569',
+          margin: 0,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: '18px',
+          fontWeight: 800,
+          color,
+          margin: '4px 0 0 0',
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  )
+}
+
 function OverviewTab({ language }: { language: Language }) {
   return (
     <>
@@ -211,12 +257,76 @@ function WeatherTab({ language }: { language: Language }) {
 }
 
 function DroughtTab({ language }: { language: Language }) {
+  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+
   return (
     <>
       <SectionHeading
         title={t(language, 'tab_drought_title')}
-        subtitle={t(language, 'tab_drought_sub')}
+        subtitle="Spatial drought monitoring using satellite indices and live weather data"
       />
+
+      <DroughtAlert
+        district={selectedDistrict}
+        onClose={() => setSelectedDistrict(null)}
+      />
+
+      <div style={{ marginBottom: '20px' }}>
+        <DroughtMap onSelect={setSelectedDistrict} />
+      </div>
+
+      {selectedDistrict && selectedDistrict.indices && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '12px',
+            marginBottom: '20px',
+            padding: '16px',
+            background: 'rgba(255,255,255,0.30)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,255,136,0.25)',
+            borderRadius: '16px',
+            boxShadow: '0 0 15px rgba(0,255,136,0.18)',
+          }}
+        >
+          <IndexTile
+            label="Drought Score"
+            value={`${selectedDistrict.score?.toFixed(0)}/100`}
+            color={selectedDistrict.score >= 71 ? '#dc2626' : selectedDistrict.score >= 51 ? '#f59e0b' : '#16803c'}
+          />
+          <IndexTile
+            label="NDVI"
+            value={selectedDistrict.indices.NDVI?.toFixed(2) ?? '—'}
+            color="#16803c"
+          />
+          <IndexTile
+            label="SAVI"
+            value={selectedDistrict.indices.SAVI?.toFixed(2) ?? '—'}
+            color="#16803c"
+          />
+          <IndexTile
+            label="LST (°C)"
+            value={selectedDistrict.indices.LST_C?.toFixed(1) ?? '—'}
+            color="#dc2626"
+          />
+          <IndexTile
+            label="Soil Moisture"
+            value={selectedDistrict.indices.Soil_Moisture?.toFixed(3) ?? '—'}
+            color="#0ea5e9"
+          />
+          <IndexTile
+            label="NDVI Anomaly"
+            value={`${selectedDistrict.indices.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`}
+            color={
+              (selectedDistrict.indices.NDVI_Anomaly_pct ?? 0) < 0
+                ? '#dc2626'
+                : '#16803c'
+            }
+          />
+        </div>
+      )}
+
       <LocationPicker />
       <div style={{ marginBottom: '16px' }}>
         <DroughtMonitor />
@@ -322,18 +432,6 @@ function LearnTab({ language }: { language: Language }) {
                 transition: 'all 0.25s ease',
                 backdropFilter: 'blur(6px)',
               }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,136,0.25)'
-                  e.currentTarget.style.background = 'rgba(0,255,136,0.10)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.35)'
-                }
-              }}
             >
               <span>{c.icon}</span>
               {c.label}
@@ -355,14 +453,6 @@ function LearnTab({ language }: { language: Language }) {
             style={{
               ...cardStyle,
               borderLeft: '4px solid #16803c',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
-              e.currentTarget.style.transform = 'translateY(0)'
             }}
           >
             <div style={{ fontSize: '24px', marginBottom: '4px' }}>{item.icon}</div>
