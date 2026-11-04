@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
-import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
@@ -19,6 +19,26 @@ import CropAdvisor from './CropAdvisor'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
+
+// Force DroughtMap to load only in the browser (fixes Leaflet SSR crash)
+const DroughtMap = dynamic(() => import('./DroughtMap'), {
+  ssr: false,
+  loading: () => (
+    <div
+      style={{
+        height: '500px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(255,255,255,0.4)',
+        borderRadius: '16px',
+        color: '#334155',
+      }}
+    >
+      Loading satellite map...
+    </div>
+  ),
+})
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -100,10 +120,25 @@ export default function DashboardPage() {
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0, textShadow: '0 1px 4px rgba(255,255,255,0.6)' }}>
+      <h1
+        style={{
+          fontSize: '24px',
+          fontWeight: 700,
+          color: '#0f172a',
+          margin: 0,
+          textShadow: '0 1px 4px rgba(255,255,255,0.6)',
+        }}
+      >
         {title}
       </h1>
-      <p style={{ fontSize: '14px', color: '#334155', margin: '4px 0 0 0', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>
+      <p
+        style={{
+          fontSize: '14px',
+          color: '#334155',
+          margin: '4px 0 0 0',
+          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+        }}
+      >
         {subtitle}
       </p>
     </div>
@@ -121,21 +156,56 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
         overflow: 'hidden',
         height: '100%',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 25px rgba(0,255,136,0.45)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,136,0.18)'
+      }}
     >
       {children}
     </div>
   )
 }
 
-function IndexTile({ label, value, color }: { label: string; value: string; color: string }) {
+function IndexTile({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string
+  color: string
+}) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.55)', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
-      <p style={{ fontSize: '10px', color: '#475569', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.55)',
+        padding: '12px',
+        borderRadius: '10px',
+        textAlign: 'center',
+      }}
+    >
+      <p
+        style={{
+          fontSize: '10px',
+          color: '#475569',
+          margin: 0,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.4px',
+        }}
+      >
         {label}
       </p>
-      <p style={{ fontSize: '18px', fontWeight: 800, color, margin: '4px 0 0 0' }}>
+      <p
+        style={{
+          fontSize: '18px',
+          fontWeight: 800,
+          color,
+          margin: '4px 0 0 0',
+        }}
+      >
         {value}
       </p>
     </div>
@@ -145,15 +215,30 @@ function IndexTile({ label, value, color }: { label: string; value: string; colo
 function OverviewTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_overview_title')} subtitle={t(language, 'tab_overview_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_overview_title')}
+        subtitle={t(language, 'tab_overview_sub')}
+      />
       <LocationPicker />
       <StatCards />
       <div style={{ marginBottom: '16px' }}>
-        <GlowWrapper><WeatherCard /></GlowWrapper>
+        <GlowWrapper>
+          <WeatherCard />
+        </GlowWrapper>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
-        <GlowWrapper><PredictionCard /></GlowWrapper>
-        <GlowWrapper><ChartSection /></GlowWrapper>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+          gap: '16px',
+        }}
+      >
+        <GlowWrapper>
+          <PredictionCard />
+        </GlowWrapper>
+        <GlowWrapper>
+          <ChartSection />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -162,10 +247,15 @@ function OverviewTab({ language }: { language: Language }) {
 function MapTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_map_title')} subtitle={t(language, 'tab_map_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_map_title')}
+        subtitle={t(language, 'tab_map_sub')}
+      />
       <LocationPicker />
       <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
-        <GlowWrapper><MapView /></GlowWrapper>
+        <GlowWrapper>
+          <MapView />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -174,44 +264,104 @@ function MapTab({ language }: { language: Language }) {
 function WeatherTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_weather_title')} subtitle={t(language, 'tab_weather_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_weather_title')}
+        subtitle={t(language, 'tab_weather_sub')}
+      />
       <LocationPicker />
-      <GlowWrapper><WeatherCard /></GlowWrapper>
+      <GlowWrapper>
+        <WeatherCard />
+      </GlowWrapper>
     </>
   )
 }
 
 function DroughtTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
+      <SectionHeading
+        title={t(language, 'tab_drought_title')}
+        subtitle="Spatial drought monitoring using satellite indices and live weather data"
+      />
 
-      <DroughtAlert district={selectedDistrict} onClose={() => setSelectedDistrict(null)} />
+      <DroughtAlert
+        district={selectedDistrict}
+        onClose={() => setSelectedDistrict(null)}
+      />
 
       <div style={{ marginBottom: '20px' }}>
-        {/* @ts-ignore */}
-        <DroughtMap onSelect={setSelectedDistrict} />
+        {isClient && <DroughtMap onSelect={setSelectedDistrict} />}
       </div>
 
       {selectedDistrict && selectedDistrict.indices && (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px',
-          marginBottom: '20px', padding: '16px', background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(0,255,136,0.25)', borderRadius: '16px', boxShadow: '0 0 15px rgba(0,255,136,0.18)',
-        }}>
-          <IndexTile label="Drought Score" value={`${selectedDistrict.score?.toFixed(0)}/100`} color={selectedDistrict.score >= 71 ? '#dc2626' : selectedDistrict.score >= 51 ? '#f59e0b' : '#16803c'} />
-          <IndexTile label="NDVI" value={selectedDistrict.indices.NDVI?.toFixed(2) ?? '—'} color="#16803c" />
-          <IndexTile label="SAVI" value={selectedDistrict.indices.SAVI?.toFixed(2) ?? '—'} color="#16803c" />
-          <IndexTile label="LST (°C)" value={selectedDistrict.indices.LST_C?.toFixed(1) ?? '—'} color="#dc2626" />
-          <IndexTile label="Soil Moisture" value={selectedDistrict.indices.Soil_Moisture?.toFixed(3) ?? '—'} color="#0ea5e9" />
-          <IndexTile label="NDVI Anomaly" value={`${selectedDistrict.indices.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`} color={(selectedDistrict.indices.NDVI_Anomaly_pct ?? 0) < 0 ? '#dc2626' : '#16803c'} />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '12px',
+            marginBottom: '20px',
+            padding: '16px',
+            background: 'rgba(255,255,255,0.30)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,255,136,0.25)',
+            borderRadius: '16px',
+            boxShadow: '0 0 15px rgba(0,255,136,0.18)',
+          }}
+        >
+          <IndexTile
+            label="Drought Score"
+            value={`${selectedDistrict.score?.toFixed(0)}/100`}
+            color={
+              selectedDistrict.score >= 71
+                ? '#dc2626'
+                : selectedDistrict.score >= 51
+                ? '#f59e0b'
+                : '#16803c'
+            }
+          />
+          <IndexTile
+            label="NDVI"
+            value={selectedDistrict.indices.NDVI?.toFixed(2) ?? '—'}
+            color="#16803c"
+          />
+          <IndexTile
+            label="SAVI"
+            value={selectedDistrict.indices.SAVI?.toFixed(2) ?? '—'}
+            color="#16803c"
+          />
+          <IndexTile
+            label="LST (°C)"
+            value={selectedDistrict.indices.LST_C?.toFixed(1) ?? '—'}
+            color="#dc2626"
+          />
+          <IndexTile
+            label="Soil Moisture"
+            value={selectedDistrict.indices.Soil_Moisture?.toFixed(3) ?? '—'}
+            color="#0ea5e9"
+          />
+          <IndexTile
+            label="NDVI Anomaly"
+            value={`${selectedDistrict.indices.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`}
+            color={
+              (selectedDistrict.indices.NDVI_Anomaly_pct ?? 0) < 0
+                ? '#dc2626'
+                : '#16803c'
+            }
+          />
         </div>
       )}
 
       <LocationPicker />
-      <div style={{ marginBottom: '16px' }}><DroughtMonitor /></div>
+      <div style={{ marginBottom: '16px' }}>
+        <DroughtMonitor />
+      </div>
       <CropAdvisor />
     </>
   )
@@ -220,10 +370,23 @@ function DroughtTab({ language }: { language: Language }) {
 function PredictionsTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_predictions_title')} subtitle={t(language, 'tab_predictions_sub')} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
-        <GlowWrapper><ChartSection /></GlowWrapper>
-        <GlowWrapper><PredictionCard /></GlowWrapper>
+      <SectionHeading
+        title={t(language, 'tab_predictions_title')}
+        subtitle={t(language, 'tab_predictions_sub')}
+      />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+          gap: '16px',
+        }}
+      >
+        <GlowWrapper>
+          <ChartSection />
+        </GlowWrapper>
+        <GlowWrapper>
+          <PredictionCard />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -232,7 +395,10 @@ function PredictionsTab({ language }: { language: Language }) {
 function ChartsTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_charts_title')} subtitle={t(language, 'tab_charts_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_charts_title')}
+        subtitle={t(language, 'tab_charts_sub')}
+      />
       <Charts />
     </>
   )
@@ -241,7 +407,10 @@ function ChartsTab({ language }: { language: Language }) {
 function MarketTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_market_title')} subtitle={t(language, 'tab_market_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_market_title')}
+        subtitle={t(language, 'tab_market_sub')}
+      />
       <Market />
     </>
   )
@@ -249,36 +418,119 @@ function MarketTab({ language }: { language: Language }) {
 
 function LearnTab({ language }: { language: Language }) {
   const [category, setCategory] = useState<LearnCategory>('all')
-  const filtered = category === 'all' ? learnItems : learnItems.filter((i) => i.category === category)
+
+  const filtered =
+    category === 'all'
+      ? learnItems
+      : learnItems.filter((i) => i.category === category)
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_learn_title')} subtitle={t(language, 'tab_learn_sub')} />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+      <SectionHeading
+        title={t(language, 'tab_learn_title')}
+        subtitle={t(language, 'tab_learn_sub')}
+      />
+
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '20px',
+        }}
+      >
         {learnCategories.map((c) => {
           const isActive = category === c.key
           return (
-            <button key={c.key} onClick={() => setCategory(c.key)} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '999px',
-              border: isActive ? '1px solid rgba(0,255,136,0.55)' : '1px solid rgba(255,255,255,0.4)',
-              background: isActive ? 'rgba(0,255,136,0.20)' : 'rgba(255,255,255,0.35)', color: '#0f172a',
-              fontSize: '13px', fontWeight: isActive ? 700 : 500, cursor: 'pointer',
-              boxShadow: isActive ? '0 0 15px rgba(0,255,136,0.40)' : 'none', transition: 'all 0.25s ease', backdropFilter: 'blur(6px)'
-            }}>
-              <span>{c.icon}</span>{c.label}
+            <button
+              key={c.key}
+              onClick={() => setCategory(c.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 16px',
+                borderRadius: '999px',
+                border: isActive
+                  ? '1px solid rgba(0,255,136,0.55)'
+                  : '1px solid rgba(255,255,255,0.4)',
+                background: isActive
+                  ? 'rgba(0,255,136,0.20)'
+                  : 'rgba(255,255,255,0.35)',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                boxShadow: isActive ? '0 0 15px rgba(0,255,136,0.40)' : 'none',
+                transition: 'all 0.25s ease',
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <span>{c.icon}</span>
+              {c.label}
             </button>
           )
         })}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '16px',
+        }}
+      >
         {filtered.map((item, i) => (
-          <div key={i} style={{ ...cardStyle, borderLeft: '4px solid #16803c' }}>
-            <div style={{ fontSize: '24px', marginBottom: '4px' }}>{item.icon}</div>
-            <h3 style={{ fontSize: '17px', color: '#0f3d20', margin: 0, fontWeight: 700, textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>{item.title}</h3>
-            <p style={{ fontSize: '14px', color: '#1f2937', lineHeight: 1.6, marginTop: '8px' }}>{item.body}</p>
+          <div
+            key={i}
+            style={{
+              ...cardStyle,
+              borderLeft: '4px solid #16803c',
+            }}
+          >
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>
+              {item.icon}
+            </div>
+            <h3
+              style={{
+                fontSize: '17px',
+                color: '#0f3d20',
+                margin: 0,
+                fontWeight: 700,
+                textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+              }}
+            >
+              {item.title}
+            </h3>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#1f2937',
+                lineHeight: 1.6,
+                marginTop: '8px',
+              }}
+            >
+              {item.body}
+            </p>
             {item.action && (
-              <div style={{ marginTop: '14px', background: 'rgba(255, 248, 225, 0.75)', padding: '12px', borderRadius: '10px' }}>
-                <p style={{ fontSize: '13px', color: '#334155', margin: 0, fontWeight: 500 }}>💊 <strong>Action:</strong> {item.action}</p>
+              <div
+                style={{
+                  marginTop: '14px',
+                  background: 'rgba(255, 248, 225, 0.75)',
+                  padding: '12px',
+                  borderRadius: '10px',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#334155',
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  💊 <strong>Action:</strong> {item.action}
+                </p>
               </div>
             )}
           </div>
@@ -291,20 +543,55 @@ function LearnTab({ language }: { language: Language }) {
 function HelpTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_help_title')} subtitle={t(language, 'tab_help_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_help_title')}
+        subtitle={t(language, 'tab_help_sub')}
+      />
+
       <div style={{ ...cardStyle, maxWidth: '640px' }}>
-        <h3 style={{ fontSize: '16px', color: '#0f172a', margin: 0, fontWeight: 700 }}>Need help with your farm?</h3>
-        <p style={{ fontSize: '14px', color: '#1f2937', lineHeight: 1.7, marginTop: '10px' }}>Our agriculture consultants can help you with:</p>
-        <ul style={{ color: '#1f2937', lineHeight: 1.9, marginTop: '8px', fontSize: '14px' }}>
+        <h3 style={{ fontSize: '16px', color: '#0f172a', margin: 0, fontWeight: 700 }}>
+          Need help with your farm?
+        </h3>
+        <p
+          style={{
+            fontSize: '14px',
+            color: '#1f2937',
+            lineHeight: 1.7,
+            marginTop: '10px',
+          }}
+        >
+          Our agriculture consultants can help you with:
+        </p>
+        <ul
+          style={{
+            color: '#1f2937',
+            lineHeight: 1.9,
+            marginTop: '8px',
+            fontSize: '14px',
+          }}
+        >
           <li>Pest and disease identification and treatment</li>
           <li>Choosing the right crop variety for your district</li>
           <li>Understanding the Random Forest yield predictions</li>
           <li>Climate-smart farming practices</li>
         </ul>
-        <a href="mailto:help@farmdashboard.co.zw" style={{
-          display: 'inline-block', marginTop: '16px', background: '#16803c', color: 'white', padding: '12px 20px',
-          borderRadius: '10px', textDecoration: 'none', fontWeight: 600, fontSize: '14px', boxShadow: '0 0 15px rgba(0,255,136,0.35)'
-        }}>Contact a Consultant</a>
+        <a
+          href="mailto:help@farmdashboard.co.zw"
+          style={{
+            display: 'inline-block',
+            marginTop: '16px',
+            background: '#16803c',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '10px',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '14px',
+            boxShadow: '0 0 15px rgba(0,255,136,0.35)',
+          }}
+        >
+          Contact a Consultant
+        </a>
       </div>
     </>
   )
@@ -313,7 +600,10 @@ function HelpTab({ language }: { language: Language }) {
 function SubscribeTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_subscribe_title')} subtitle={t(language, 'tab_subscribe_sub')} />
+      <SectionHeading
+        title={t(language, 'tab_subscribe_title')}
+        subtitle={t(language, 'tab_subscribe_sub')}
+      />
       <Subscription />
     </>
   )
