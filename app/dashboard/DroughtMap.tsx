@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
 
-export default function DroughtMap({
-  onSelect,
-}: {
+type DroughtMapProps = {
   onSelect: (data: any) => void
-}) {
+}
+
+export default function DroughtMap({ onSelect }: DroughtMapProps) {
   const [geoData, setGeoData] = useState<any>(null)
 
   useEffect(() => {
