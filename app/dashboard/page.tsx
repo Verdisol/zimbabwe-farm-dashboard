@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
-import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import ChartSection from './ChartSection'
 import PredictionCard from './PredictionCard'
@@ -19,6 +19,29 @@ import CropAdvisor from './CropAdvisor'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
+
+// Dynamically import DroughtMap with SSR disabled, but manually define its props
+const DroughtMap = dynamic<{ onSelect: (data: any) => void }>(
+  () => import('./DroughtMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        style={{
+          height: '500px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(255,255,255,0.4)',
+          borderRadius: '16px',
+          color: '#334155',
+        }}
+      >
+        Loading satellite map...
+      </div>
+    ),
+  }
+)
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -100,25 +123,10 @@ export default function DashboardPage() {
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h1
-        style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: '#0f172a',
-          margin: 0,
-          textShadow: '0 1px 4px rgba(255,255,255,0.6)',
-        }}
-      >
+      <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0, textShadow: '0 1px 4px rgba(255,255,255,0.6)' }}>
         {title}
       </h1>
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#334155',
-          margin: '4px 0 0 0',
-          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
-        }}
-      >
+      <p style={{ fontSize: '14px', color: '#334155', margin: '4px 0 0 0', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>
         {subtitle}
       </p>
     </div>
@@ -127,61 +135,17 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
 
 function GlowWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        borderRadius: '16px',
-        border: '1px solid rgba(0,255,136,0.20)',
-        boxShadow: '0 0 15px rgba(0,255,136,0.18)',
-        transition: 'all 0.3s ease',
-        overflow: 'hidden',
-        height: '100%',
-      }}
-    >
+    <div style={{ borderRadius: '16px', border: '1px solid rgba(0,255,136,0.20)', boxShadow: '0 0 15px rgba(0,255,136,0.18)', transition: 'all 0.3s ease', overflow: 'hidden', height: '100%' }}>
       {children}
     </div>
   )
 }
 
-function IndexTile({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string
-  color: string
-}) {
+function IndexTile({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.55)',
-        padding: '12px',
-        borderRadius: '10px',
-        textAlign: 'center',
-      }}
-    >
-      <p
-        style={{
-          fontSize: '10px',
-          color: '#475569',
-          margin: 0,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.4px',
-        }}
-      >
-        {label}
-      </p>
-      <p
-        style={{
-          fontSize: '18px',
-          fontWeight: 800,
-          color,
-          margin: '4px 0 0 0',
-        }}
-      >
-        {value}
-      </p>
+    <div style={{ background: 'rgba(255,255,255,0.55)', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
+      <p style={{ fontSize: '10px', color: '#475569', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</p>
+      <p style={{ fontSize: '18px', fontWeight: 800, color, margin: '4px 0 0 0' }}>{value}</p>
     </div>
   )
 }
@@ -192,9 +156,7 @@ function OverviewTab({ language }: { language: Language }) {
       <SectionHeading title={t(language, 'tab_overview_title')} subtitle={t(language, 'tab_overview_sub')} />
       <LocationPicker />
       <StatCards />
-      <div style={{ marginBottom: '16px' }}>
-        <GlowWrapper><WeatherCard /></GlowWrapper>
-      </div>
+      <div style={{ marginBottom: '16px' }}><GlowWrapper><WeatherCard /></GlowWrapper></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
         <GlowWrapper><PredictionCard /></GlowWrapper>
         <GlowWrapper><ChartSection /></GlowWrapper>
@@ -208,9 +170,7 @@ function MapTab({ language }: { language: Language }) {
     <>
       <SectionHeading title={t(language, 'tab_map_title')} subtitle={t(language, 'tab_map_sub')} />
       <LocationPicker />
-      <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
-        <GlowWrapper><MapView /></GlowWrapper>
-      </div>
+      <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}><GlowWrapper><MapView /></GlowWrapper></div>
     </>
   )
 }
@@ -227,22 +187,14 @@ function WeatherTab({ language }: { language: Language }) {
 
 function DroughtTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   return (
     <>
       <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
-
       <DroughtAlert district={selectedDistrict} onClose={() => setSelectedDistrict(null)} />
-
       <div style={{ marginBottom: '20px' }}>
-        {isClient && <DroughtMap onSelect={setSelectedDistrict} />}
+        <DroughtMap onSelect={setSelectedDistrict} />
       </div>
-
       {selectedDistrict && selectedDistrict.indices && (
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px',
@@ -257,7 +209,6 @@ function DroughtTab({ language }: { language: Language }) {
           <IndexTile label="NDVI Anomaly" value={`${selectedDistrict.indices.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`} color={(selectedDistrict.indices.NDVI_Anomaly_pct ?? 0) < 0 ? '#dc2626' : '#16803c'} />
         </div>
       )}
-
       <LocationPicker />
       <div style={{ marginBottom: '16px' }}><DroughtMonitor /></div>
       <CropAdvisor />
@@ -349,10 +300,7 @@ function HelpTab({ language }: { language: Language }) {
           <li>Understanding the Random Forest yield predictions</li>
           <li>Climate-smart farming practices</li>
         </ul>
-        <a href="mailto:help@farmdashboard.co.zw" style={{
-          display: 'inline-block', marginTop: '16px', background: '#16803c', color: 'white', padding: '12px 20px',
-          borderRadius: '10px', textDecoration: 'none', fontWeight: 600, fontSize: '14px', boxShadow: '0 0 15px rgba(0,255,136,0.35)'
-        }}>Contact a Consultant</a>
+        <a href="mailto:help@farmdashboard.co.zw" style={{ display: 'inline-block', marginTop: '16px', background: '#16803c', color: 'white', padding: '12px 20px', borderRadius: '10px', textDecoration: 'none', fontWeight: 600, fontSize: '14px', boxShadow: '0 0 15px rgba(0,255,136,0.35)' }}>Contact a Consultant</a>
       </div>
     </>
   )
