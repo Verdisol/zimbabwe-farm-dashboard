@@ -1,46 +1,46 @@
 'use client'
 
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
+import L from 'leaflet'
 
 type DroughtMapProps = {
   onSelect: (data: any) => void
 }
 
+// Helper component to zoom to a selected layer
+function ZoomToFeature({ bounds }: { bounds: L.LatLngBounds | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [20, 20] })
+    }
+  }, [bounds, map])
+  return null
+}
+
 export default function DroughtMap({ onSelect }: DroughtMapProps) {
   const [geoData, setGeoData] = useState<any>(null)
-  const [debugMsg, setDebugMsg] = useState<string>('Starting...')
+  const [wardData, setWardData] = useState<any>(null)
+  const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null)
+  const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
+  // Load District GeoJSON
   useEffect(() => {
-    setDebugMsg('Fetching GeoJSON...')
     fetch('/data/ZIM_Drought_Master_Final.geojson')
-      .then((res) => {
-        setDebugMsg(`Response status: ${res.status}, type: ${res.headers.get('content-type')}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.text()
-      })
-      .then((text) => {
-        setDebugMsg(`Received ${text.length} bytes. Parsing...`)
-        try {
-          const json = JSON.parse(text)
-          if (!json.features || json.features.length === 0) {
-            setDebugMsg('❌ GeoJSON has no features')
-            toast.error('GeoJSON file is empty')
-            return
-          }
-          setDebugMsg(`✅ Loaded ${json.features.length} districts`)
-          setGeoData(json)
-        } catch (e: any) {
-          setDebugMsg(`❌ JSON parse error: ${e.message}`)
-          toast.error('Invalid GeoJSON format')
-        }
-      })
-      .catch((err) => {
-        setDebugMsg(`❌ Fetch error: ${err.message}`)
-        toast.error('Failed to load map data')
-      })
+      .then((res) => res.json())
+      .then((data) => setGeoData(data))
+      .catch(() => toast.error('Failed to load district data.'))
+  }, [])
+
+  // Load Ward GeoJSON
+  useEffect(() => {
+    fetch('/data/wards.geojson') // Make sure this file is in public/data/
+      .then((res) => res.json())
+      .then((data) => setWardData(data))
+      .catch(() => toast.error('Failed to load ward data. Upload wards.geojson to public/data/'))
   }, [])
 
   const getColor = (score: number) => {
@@ -63,16 +63,22 @@ export default function DroughtMap({ onSelect }: DroughtMapProps) {
   const onEachFeature = (feature: any, layer: any) => {
     const props = feature.properties
     const score = props.Drought_Score || 0
+    const districtName = props.ADM2_NAME || props.ADM1_NAME || 'Unknown'
 
     layer.bindTooltip(
-      `${props.ADM2_NAME || 'District'} (Score: ${score.toFixed(0)})`,
+      `${districtName} (Score: ${score.toFixed(0)})`,
       { sticky: true }
     )
 
     layer.on({
       click: () => {
+        // 1. Set the selected district name to filter wards
+        setSelectedDistrictName(districtName)
+        // 2. Zoom to this district's bounds
+        setZoomBounds(layer.getBounds())
+        // 3. Notify parent component
         onSelect({
-          name: props.ADM2_NAME || props.ADM1_NAME || 'Unknown',
+          name: districtName,
           score: score,
           indices: props,
         })
@@ -80,92 +86,46 @@ export default function DroughtMap({ onSelect }: DroughtMapProps) {
     })
   }
 
+  // Filter wards that belong to the selected district
+  const filteredWards = wardData?.features?.filter((f: any) => {
+    // Note: The property name for district in the ward file might be 'ADM2_NAME' or similar.
+    // Check your wards.geojson properties and adjust 'ADM2_NAME' if needed.
+    return f.properties.ADM2_NAME === selectedDistrictName
+  })
+
   if (!geoData) {
-    return (
-      <div
-        style={{
-          height: '500px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(255,255,255,0.4)',
-          borderRadius: '16px',
-          color: '#334155',
-          gap: '8px',
-          padding: '20px',
-        }}
-      >
-        <div style={{ fontSize: '16px', fontWeight: 600 }}>Loading satellite drought data...</div>
-        <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
-          {debugMsg}
-        </div>
-      </div>
-    )
+    return <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.4)', borderRadius: '16px' }}>Loading satellite data...</div>
   }
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: '500px',
-        width: '100%',
-        borderRadius: '16px',
-        overflow: 'hidden',
-        boxShadow: '0 0 15px rgba(0,255,136,0.25)',
-        border: '1px solid rgba(0,255,136,0.30)',
-        zIndex: 0,
-      }}
-    >
-      <MapContainer
-        center={[-19.015, 29.155]}
-        zoom={6}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-        <GeoJSON
-          data={geoData}
-          style={getStyle}
-          onEachFeature={onEachFeature}
-        />
+    <div style={{ position: 'relative', height: '500px', width: '100%', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 0 15px rgba(0,255,136,0.25)', border: '1px solid rgba(0,255,136,0.30)', zIndex: 0 }}>
+      <MapContainer center={[-19.015, 29.155]} zoom={6} style={{ height: '100%', width: '100%' }}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
+        
+        {/* District Layer */}
+        <GeoJSON data={geoData} style={getStyle} onEachFeature={onEachFeature} />
+        
+        {/* Ward Layer (only shows when a district is selected) */}
+        {filteredWards && filteredWards.length > 0 && (
+          <GeoJSON
+            data={{ type: 'FeatureCollection', features: filteredWards }}
+            style={{ fillColor: 'transparent', weight: 1, color: '#0f172a', dashArray: '3' }}
+            onEachFeature={(feature, layer) => {
+              layer.bindTooltip(feature.properties.ADM3_NAME || 'Ward', { sticky: true })
+            }}
+          />
+        )}
+
+        <ZoomToFeature bounds={zoomBounds} />
       </MapContainer>
 
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '16px',
-          right: '16px',
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(10px)',
-          padding: '12px',
-          borderRadius: '10px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          zIndex: 1000,
-          fontSize: '12px',
-        }}
-      >
-        <div style={{ fontWeight: 700, marginBottom: '8px', color: '#0f3d20' }}>
-          Drought Score
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#22c55e' }} />
-          0–30 (Normal)
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#eab308' }} />
-          31–50 (Watch)
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f97316' }} />
-          51–70 (Alert)
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444' }} />
-          71–100 (Severe)
-        </div>
+      {/* Legend */}
+      <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', padding: '12px', borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 1000, fontSize: '12px' }}>
+        <div style={{ fontWeight: 700, marginBottom: '8px', color: '#0f3d20' }}>Drought Score</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#22c55e' }} />0–30 (Normal)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#eab308' }} />31–50 (Watch)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f97316' }} />51–70 (Alert)</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444' }} />71–100 (Severe)</div>
       </div>
     </div>
   )
