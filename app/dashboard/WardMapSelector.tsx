@@ -21,6 +21,7 @@ function ZoomToFeature({ bounds }: { bounds: L.LatLngBounds | null }) {
 }
 
 function getField(props: any, candidates: string[]): string {
+  if (!props) return ''
   for (const key of candidates) {
     if (props[key] !== undefined && props[key] !== null && props[key] !== '') {
       return String(props[key])
@@ -29,9 +30,18 @@ function getField(props: any, candidates: string[]): string {
   return ''
 }
 
-const DISTRICT_NAME_FIELDS = ['ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district', 'DIST_NAME', 'NAME', 'name', 'District']
-const WARD_NAME_FIELDS = ['ADM3_NAME', 'ADM3_EN', 'ADM3', 'WARD_NAME', 'WARD', 'ward', 'NAME', 'name', 'Ward']
-const WARD_DISTRICT_FIELDS = ['ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district', 'PARENT', 'parent', 'DIST_NAME', 'District']
+const DISTRICT_NAME_FIELDS = [
+  'ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district',
+  'DIST_NAME', 'NAME', 'name', 'District',
+]
+const WARD_NAME_FIELDS = [
+  'ADM3_NAME', 'ADM3_EN', 'ADM3', 'WARD_NAME', 'WARD',
+  'ward', 'NAME', 'name', 'Ward',
+]
+const WARD_DISTRICT_FIELDS = [
+  'ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district',
+  'PARENT', 'parent', 'DIST_NAME', 'District',
+]
 
 export default function WardMapSelector({
   onDistrictSelect,
@@ -53,9 +63,9 @@ export default function WardMapSelector({
       .then((r) => r.json())
       .then((data) => {
         setDistrictGeo(data)
-        const names = (data.features || [])
+        const names: string[] = (data.features || [])
           .map((f: any) => getField(f.properties, DISTRICT_NAME_FIELDS))
-          .filter(Boolean)
+          .filter((n: string) => n !== '')
         setDistrictNames(Array.from(new Set(names)).sort())
         console.log('✅ Loaded', data.features?.length, 'districts')
       })
@@ -93,7 +103,9 @@ export default function WardMapSelector({
   const handleDistrictChange = (name: string) => {
     setSelectedDistrict(name)
     setSelectedWard('')
-    const filtered = (wardGeo?.features || []).filter((f: any) => getField(f.properties, WARD_DISTRICT_FIELDS) === name)
+    const filtered = (wardGeo?.features || []).filter(
+      (f: any) => getField(f.properties, WARD_DISTRICT_FIELDS) === name
+    )
     setWardOptions(filtered)
     const droughtProps = droughtLookup[name] || {}
     const score = droughtProps.Drought_Score || 0
@@ -102,39 +114,110 @@ export default function WardMapSelector({
 
   const handleWardChange = (wardName: string) => {
     setSelectedWard(wardName)
-    const ward = wardOptions.find((f: any) => getField(f.properties, WARD_NAME_FIELDS) === wardName)
+    const ward = wardOptions.find(
+      (f: any) => getField(f.properties, WARD_NAME_FIELDS) === wardName
+    )
     if (ward && onWardSelect) onWardSelect(ward)
   }
 
   if (!districtGeo) {
     return (
-      <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', color: '#334155' }}>
+      <div
+        style={{
+          height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(255,255,255,0.4)',
+          borderRadius: '16px',
+          color: '#334155',
+        }}
+      >
         Loading district data...
       </div>
     )
   }
 
-  const filteredWards = wardOptions.length > 0 ? ({ type: 'FeatureCollection', features: wardOptions } as any) : null
+  const filteredWards =
+    wardOptions.length > 0
+      ? ({ type: 'FeatureCollection', features: wardOptions } as any)
+      : null
 
   return (
     <div>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        <select value={selectedDistrict} onChange={(e) => handleDistrictChange(e.target.value)} style={{ flex: 1, minWidth: '180px', height: '44px', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '10px', background: 'rgba(255,255,255,0.92)', fontSize: '14px' }}>
+        <select
+          value={selectedDistrict}
+          onChange={(e) => handleDistrictChange(e.target.value)}
+          style={{
+            flex: 1,
+            minWidth: '180px',
+            height: '44px',
+            padding: '0 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: '10px',
+            background: 'rgba(255,255,255,0.92)',
+            fontSize: '14px',
+          }}
+        >
           <option value="">-- Select District ({districtNames.length}) --</option>
-          {districtNames.map((d) => <option key={d} value={d}>{d}</option>)}
+          {districtNames.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
         </select>
 
-        <select value={selectedWard} onChange={(e) => handleWardChange(e.target.value)} disabled={!selectedDistrict} style={{ flex: 1, minWidth: '180px', height: '44px', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '10px', background: 'rgba(255,255,255,0.92)', fontSize: '14px' }}>
-          <option value="">{!selectedDistrict ? 'Choose district first' : wardOptions.length === 0 ? 'No wards found' : `-- Select Ward (${wardOptions.length}) --`}</option>
+        <select
+          value={selectedWard}
+          onChange={(e) => handleWardChange(e.target.value)}
+          disabled={!selectedDistrict}
+          style={{
+            flex: 1,
+            minWidth: '180px',
+            height: '44px',
+            padding: '0 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: '10px',
+            background: 'rgba(255,255,255,0.92)',
+            fontSize: '14px',
+          }}
+        >
+          <option value="">
+            {!selectedDistrict
+              ? 'Choose district first'
+              : wardOptions.length === 0
+              ? 'No wards found'
+              : `-- Select Ward (${wardOptions.length}) --`}
+          </option>
           {wardOptions.map((w: any, i: number) => {
             const name = getField(w.properties, WARD_NAME_FIELDS) || `Ward ${i + 1}`
-            return <option key={`${name}-${i}`} value={name}>{name}</option>
+            return (
+              <option key={`${name}-${i}`} value={name}>
+                {name}
+              </option>
+            )
           })}
         </select>
       </div>
 
-      <div style={{ position: 'relative', height, width: '100%', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 0 15px rgba(0,255,136,0.25)', border: '1px solid rgba(0,255,136,0.30)', zIndex: 0 }}>
-        <MapContainer center={[-19.015, 29.155]} zoom={6} style={{ height: '100%', width: '100%' }}>
+      <div
+        style={{
+          position: 'relative',
+          height,
+          width: '100%',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 0 15px rgba(0,255,136,0.25)',
+          border: '1px solid rgba(0,255,136,0.30)',
+          zIndex: 0,
+        }}
+      >
+        <MapContainer
+          center={[-19.015, 29.155]}
+          zoom={6}
+          style={{ height: '100%', width: '100%' }}
+        >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
           <GeoJSON
@@ -155,15 +238,22 @@ export default function WardMapSelector({
               const name = getField(feature.properties, DISTRICT_NAME_FIELDS)
               const props = droughtLookup[name]
               const score = props?.Drought_Score || 0
-              layer.bindTooltip(props ? `${name} (Score: ${score.toFixed(0)})` : `${name}`, { sticky: true })
+              layer.bindTooltip(
+                props ? `${name} (Score: ${score.toFixed(0)})` : `${name}`,
+                { sticky: true }
+              )
               layer.on({
                 click: () => {
                   setSelectedDistrict(name)
                   setZoomBounds(layer.getBounds())
-                  const filtered = (wardGeo?.features || []).filter((f: any) => getField(f.properties, WARD_DISTRICT_FIELDS) === name)
+                  const filtered = (wardGeo?.features || []).filter(
+                    (f: any) =>
+                      getField(f.properties, WARD_DISTRICT_FIELDS) === name
+                  )
                   setWardOptions(filtered)
                   setSelectedWard('')
-                  if (onDistrictSelect) onDistrictSelect({ name, score, indices: props || {} })
+                  if (onDistrictSelect)
+                    onDistrictSelect({ name, score, indices: props || {} })
                 },
               })
             }}
@@ -173,9 +263,16 @@ export default function WardMapSelector({
             <GeoJSON
               key={selectedDistrict}
               data={filteredWards}
-              style={{ fillColor: 'transparent', fillOpacity: 0, color: '#0f172a', weight: 1.5, dashArray: '4' }}
+              style={{
+                fillColor: 'transparent',
+                fillOpacity: 0,
+                color: '#0f172a',
+                weight: 1.5,
+                dashArray: '4',
+              }}
               onEachFeature={(feature: any, layer: any) => {
-                const wardName = getField(feature.properties, WARD_NAME_FIELDS) || 'Ward'
+                const wardName =
+                  getField(feature.properties, WARD_NAME_FIELDS) || 'Ward'
                 layer.bindTooltip(wardName, { sticky: true })
                 layer.on({
                   click: (e: any) => {
@@ -193,7 +290,18 @@ export default function WardMapSelector({
         </MapContainer>
 
         {showLegend && (
-          <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(255,255,255,0.92)', padding: '12px', borderRadius: '10px', zIndex: 1000, fontSize: '12px' }}>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '16px',
+              right: '16px',
+              background: 'rgba(255,255,255,0.92)',
+              padding: '12px',
+              borderRadius: '10px',
+              zIndex: 1000,
+              fontSize: '12px',
+            }}
+          >
             <div style={{ fontWeight: 700, marginBottom: '6px' }}>Drought Score</div>
             <div>🟢 0–30 Normal</div>
             <div>🟡 31–50 Watch</div>
