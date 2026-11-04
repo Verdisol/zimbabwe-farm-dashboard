@@ -20,10 +20,13 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-const DroughtMap = dynamic<{ onSelect: (data: any) => void }>(
-  () => import('./DroughtMap'),
-  { ssr: false }
-)
+// Client-only WardMapSelector
+const WardMapSelector = dynamic<{
+  onDistrictSelect?: (data: any) => void
+  onWardSelect?: (ward: any) => void
+  height?: string
+  showLegend?: boolean
+}>(() => import('./WardMapSelector'), { ssr: false })
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -52,19 +55,7 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        backgroundImage:
-          'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url(/images/background.jpeg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundImage: 'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url(/images/background.jpeg)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}>
       <div style={{ flexShrink: 0 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
@@ -102,11 +93,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
 }
 
 function GlowWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ borderRadius: '16px', border: '1px solid rgba(0,255,136,0.20)', boxShadow: '0 0 15px rgba(0,255,136,0.18)', transition: 'all 0.3s ease', overflow: 'hidden', height: '100%' }}>
-      {children}
-    </div>
-  )
+  return <div style={{ borderRadius: '16px', border: '1px solid rgba(0,255,136,0.20)', boxShadow: '0 0 15px rgba(0,255,136,0.18)', transition: 'all 0.3s ease', overflow: 'hidden', height: '100%' }}>{children}</div>
 }
 
 function IndexTile({ label, value, color }: { label: string; value: string; color: string }) {
@@ -119,11 +106,36 @@ function IndexTile({ label, value, color }: { label: string; value: string; colo
 }
 
 function OverviewTab({ language }: { language: Language }) {
+  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+  const [selectedWard, setSelectedWard] = useState<any>(null)
+
   return (
     <>
       <SectionHeading title={t(language, 'tab_overview_title')} subtitle={t(language, 'tab_overview_sub')} />
       <LocationPicker />
       <StatCards />
+
+      {/* Interactive map with ward selection */}
+      <div style={{ marginBottom: '20px' }}>
+        <h3 style={{ fontSize: '15px', color: '#0f3d20', margin: '0 0 8px 0', fontWeight: 700 }}>🗺️ Select your district and ward</h3>
+        <WardMapSelector
+          height="420px"
+          onDistrictSelect={setSelectedDistrict}
+          onWardSelect={setSelectedWard}
+        />
+      </div>
+
+      {/* Selected district summary */}
+      {selectedDistrict && (
+        <div style={{ ...cardStyle, marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '15px', color: '#0f3d20', margin: 0, fontWeight: 700 }}>📍 {selectedDistrict.name}</h3>
+          <p style={{ fontSize: '13px', color: '#1f2937', marginTop: '6px' }}>
+            Drought Score: <strong>{selectedDistrict.score?.toFixed(0)}/100</strong>
+            {selectedWard && <> · Ward: <strong>{selectedWard.name}</strong></>}
+          </p>
+        </div>
+      )}
+
       <div style={{ marginBottom: '16px' }}><GlowWrapper><WeatherCard /></GlowWrapper></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
         <GlowWrapper><PredictionCard /></GlowWrapper>
@@ -153,7 +165,6 @@ function WeatherTab({ language }: { language: Language }) {
   )
 }
 
-// This is the key function — now accepts BOTH satellite score and rainfall status
 function DroughtTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
   const [rainfallStatus, setRainfallStatus] = useState<string>('normal')
@@ -163,13 +174,8 @@ function DroughtTab({ language }: { language: Language }) {
   const gainRef = useRef<GainNode | null>(null)
   const intervalRef = useRef<number | null>(null)
 
-  // SATELLITE drought: from GEE GeoJSON score
   const satelliteDrought = selectedDistrict && selectedDistrict.score >= 51
-
-  // RAINFALL drought: from DroughtMonitor z-score
   const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
-
-  // Flash if EITHER model says drought
   const isDrought = satelliteDrought || rainfallDrought
 
   useEffect(() => {
@@ -179,9 +185,7 @@ function DroughtTab({ language }: { language: Language }) {
       if (gainRef.current) { try { gainRef.current.disconnect() } catch {} gainRef.current = null }
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null }
     }
-
     cleanup()
-
     if (!isDrought || muted) return
 
     try {
@@ -197,77 +201,32 @@ function DroughtTab({ language }: { language: Language }) {
       osc.start()
       oscillatorRef.current = osc
       gainRef.current = gain
-
       let pulse = 0
       intervalRef.current = window.setInterval(() => {
         pulse = (pulse + 1) % 2
-        if (gainRef.current) {
-          try { gainRef.current.gain.value = pulse === 0 ? 0.15 : 0.02 } catch {}
-        }
+        if (gainRef.current) { try { gainRef.current.gain.value = pulse === 0 ? 0.15 : 0.02 } catch {} }
       }, 400)
-    } catch (e) {
-      console.log('Audio blocked. Click page once.')
-    }
+    } catch (e) { console.log('Audio blocked. Click page once.') }
 
     return () => cleanup()
   }, [isDrought, muted])
 
   return (
     <>
-      <SectionHeading
-        title={t(language, 'tab_drought_title')}
-        subtitle="Spatial drought monitoring using satellite indices and live rainfall data"
-      />
-
-      {/* Full-screen red flash — triggers from EITHER model */}
+      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring with district and ward selection" />
       {isDrought && !muted && <div className="fullscreen-red-flash" />}
 
-      {/* Warning banner — shows the reason */}
       {isDrought && (
-        <div
-          style={{
-            marginBottom: '16px',
-            padding: '16px',
-            background: (satelliteDrought && selectedDistrict.score >= 71) ? '#7f1d1d' : '#dc2626',
-            color: 'white',
-            borderRadius: '12px',
-            fontWeight: 700,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            boxShadow: '0 0 20px rgba(220, 38, 38, 0.7)',
-            position: 'relative',
-            zIndex: 99999,
-          }}
-        >
+        <div style={{ marginBottom: '16px', padding: '16px', background: (satelliteDrought && selectedDistrict?.score >= 71) ? '#7f1d1d' : '#dc2626', color: 'white', borderRadius: '12px', fontWeight: 700, display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 0 20px rgba(220, 38, 38, 0.7)', position: 'relative', zIndex: 99999 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>⚠️ DROUGHT WARNING — {selectedDistrict?.name || 'Current District'}</span>
-            <button
-              onClick={() => setMuted(!muted)}
-              style={{
-                background: 'rgba(0,0,0,0.35)',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
+            <span>⚠️ DROUGHT WARNING</span>
+            <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
               {muted ? '🔇 Unmute & Resume Flash' : '🔊 Mute & Stop Flash'}
             </button>
           </div>
           <div style={{ fontSize: '13px', fontWeight: 500, opacity: 0.95 }}>
-            {satelliteDrought && (
-              <div>
-                🛰️ Satellite model: Drought score {selectedDistrict.score.toFixed(0)}/100
-              </div>
-            )}
-            {rainfallDrought && (
-              <div>
-                🌧️ Rainfall model: 12-month rainfall is significantly below the 30-year average
-              </div>
-            )}
+            {satelliteDrought && <div>🛰️ Satellite: {selectedDistrict.name} drought score {selectedDistrict.score.toFixed(0)}/100</div>}
+            {rainfallDrought && <div>🌧️ Rainfall model: 12-month rainfall is below the 30-year average</div>}
           </div>
         </div>
       )}
@@ -275,7 +234,7 @@ function DroughtTab({ language }: { language: Language }) {
       <DroughtAlert district={selectedDistrict} onClose={() => setSelectedDistrict(null)} />
 
       <div style={{ marginBottom: '20px' }}>
-        <DroughtMap onSelect={setSelectedDistrict} />
+        <WardMapSelector height="500px" onDistrictSelect={setSelectedDistrict} />
       </div>
 
       {selectedDistrict && selectedDistrict.indices && (
@@ -291,7 +250,6 @@ function DroughtTab({ language }: { language: Language }) {
 
       <LocationPicker />
       <div style={{ marginBottom: '16px' }}>
-        {/* @ts-ignore — onStatusChange is a custom prop we're adding */}
         <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
       </div>
       <CropAdvisor />
