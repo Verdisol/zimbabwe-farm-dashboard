@@ -7,29 +7,29 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ---------------------------------------------------------------
-   Drought alert blink animations
-   Used by DroughtAlert.tsx
-   --------------------------------------------------------------- */
-@keyframes blink-slow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-@keyframes blink-medium {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-@keyframes blink-fast {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+/* Full-screen red flashing overlay */
+@keyframes redFlash {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.5; }
 }
 
-.animate-blink-slow {
-  animation: blink-slow 1.5s ease-in-out infinite;
+.fullscreen-red-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #dc2626;
+  z-index: 99998;
+  pointer-events: none;
+  animation: redFlash 0.9s ease-in-out infinite;
 }
-.animate-blink-medium {
-  animation: blink-medium 1s ease-in-out infinite;
-}
-.animate-blink-fast {
-  animation: blink-fast 0.5s ease-in-out infinite;
-}
+
+/* Blink animations */
+@keyframes blink-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+@keyframes blink-medium { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes blink-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.animate-blink-slow { animation: blink-slow 1.5s ease-in-out infinite; }
+.animate-blink-medium { animation: blink-medium 1s ease-in-out infinite; }
+.animate-blink-fast { animation: blink-fast 0.5s ease-in-out infinite; }
