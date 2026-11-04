@@ -11,16 +11,36 @@ type DroughtMapProps = {
 
 export default function DroughtMap({ onSelect }: DroughtMapProps) {
   const [geoData, setGeoData] = useState<any>(null)
+  const [debugMsg, setDebugMsg] = useState<string>('Starting...')
 
   useEffect(() => {
+    setDebugMsg('Fetching GeoJSON...')
     fetch('/data/ZIM_Drought_Master_Final.geojson')
-      .then((res) => res.json())
-      .then((data) => setGeoData(data))
-      .catch(() =>
-        toast.error(
-          'Failed to load map data. Make sure the GeoJSON file is in public/data/.'
-        )
-      )
+      .then((res) => {
+        setDebugMsg(`Response status: ${res.status}, type: ${res.headers.get('content-type')}`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.text()
+      })
+      .then((text) => {
+        setDebugMsg(`Received ${text.length} bytes. Parsing...`)
+        try {
+          const json = JSON.parse(text)
+          if (!json.features || json.features.length === 0) {
+            setDebugMsg('❌ GeoJSON has no features')
+            toast.error('GeoJSON file is empty')
+            return
+          }
+          setDebugMsg(`✅ Loaded ${json.features.length} districts`)
+          setGeoData(json)
+        } catch (e: any) {
+          setDebugMsg(`❌ JSON parse error: ${e.message}`)
+          toast.error('Invalid GeoJSON format')
+        }
+      })
+      .catch((err) => {
+        setDebugMsg(`❌ Fetch error: ${err.message}`)
+        toast.error('Failed to load map data')
+      })
   }, [])
 
   const getColor = (score: number) => {
@@ -66,14 +86,20 @@ export default function DroughtMap({ onSelect }: DroughtMapProps) {
         style={{
           height: '500px',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           background: 'rgba(255,255,255,0.4)',
           borderRadius: '16px',
           color: '#334155',
+          gap: '8px',
+          padding: '20px',
         }}
       >
-        Loading satellite drought data...
+        <div style={{ fontSize: '16px', fontWeight: 600 }}>Loading satellite drought data...</div>
+        <div style={{ fontSize: '12px', color: '#64748b', fontFamily: 'monospace' }}>
+          {debugMsg}
+        </div>
       </div>
     )
   }
