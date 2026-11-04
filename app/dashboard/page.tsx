@@ -153,15 +153,24 @@ function WeatherTab({ language }: { language: Language }) {
   )
 }
 
+// This is the key function — now accepts BOTH satellite score and rainfall status
 function DroughtTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+  const [rainfallStatus, setRainfallStatus] = useState<string>('normal')
   const [muted, setMuted] = useState(false)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const oscillatorRef = useRef<OscillatorNode | null>(null)
   const gainRef = useRef<GainNode | null>(null)
   const intervalRef = useRef<number | null>(null)
 
-  const isDrought = selectedDistrict && selectedDistrict.score >= 50
+  // SATELLITE drought: from GEE GeoJSON score
+  const satelliteDrought = selectedDistrict && selectedDistrict.score >= 51
+
+  // RAINFALL drought: from DroughtMonitor z-score
+  const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
+
+  // Flash if EITHER model says drought
+  const isDrought = satelliteDrought || rainfallDrought
 
   useEffect(() => {
     const cleanup = () => {
@@ -197,7 +206,7 @@ function DroughtTab({ language }: { language: Language }) {
         }
       }, 400)
     } catch (e) {
-      console.log('Audio blocked. Click page once to enable.')
+      console.log('Audio blocked. Click page once.')
     }
 
     return () => cleanup()
@@ -205,51 +214,61 @@ function DroughtTab({ language }: { language: Language }) {
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
+      <SectionHeading
+        title={t(language, 'tab_drought_title')}
+        subtitle="Spatial drought monitoring using satellite indices and live rainfall data"
+      />
 
-      {/* FULL SCREEN RED FLASH OVERLAY */}
-      {isDrought && !muted && (
-        <div className="fullscreen-red-flash" />
-      )}
+      {/* Full-screen red flash — triggers from EITHER model */}
+      {isDrought && !muted && <div className="fullscreen-red-flash" />}
 
-      {/* Warning banner */}
+      {/* Warning banner — shows the reason */}
       {isDrought && (
         <div
           style={{
             marginBottom: '16px',
             padding: '16px',
-            background: selectedDistrict.score >= 71 ? '#7f1d1d' : '#dc2626',
+            background: (satelliteDrought && selectedDistrict.score >= 71) ? '#7f1d1d' : '#dc2626',
             color: 'white',
             borderRadius: '12px',
             fontWeight: 700,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            flexDirection: 'column',
+            gap: '8px',
             boxShadow: '0 0 20px rgba(220, 38, 38, 0.7)',
             position: 'relative',
             zIndex: 99999,
           }}
         >
-          <span>
-            ⚠️ DROUGHT WARNING: {selectedDistrict.name} (Score: {selectedDistrict.score.toFixed(0)}/100)
-            {selectedDistrict.score >= 71 ? ' — SEVERE' : ' — ALERT'}
-          </span>
-          <button
-            onClick={() => setMuted(!muted)}
-            style={{
-              background: 'rgba(0,0,0,0.35)',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              position: 'relative',
-              zIndex: 100000,
-            }}
-          >
-            {muted ? '🔇 Unmute & Resume Flash' : '🔊 Mute & Stop Flash'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>⚠️ DROUGHT WARNING — {selectedDistrict?.name || 'Current District'}</span>
+            <button
+              onClick={() => setMuted(!muted)}
+              style={{
+                background: 'rgba(0,0,0,0.35)',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              {muted ? '🔇 Unmute & Resume Flash' : '🔊 Mute & Stop Flash'}
+            </button>
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 500, opacity: 0.95 }}>
+            {satelliteDrought && (
+              <div>
+                🛰️ Satellite model: Drought score {selectedDistrict.score.toFixed(0)}/100
+              </div>
+            )}
+            {rainfallDrought && (
+              <div>
+                🌧️ Rainfall model: 12-month rainfall is significantly below the 30-year average
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -271,7 +290,10 @@ function DroughtTab({ language }: { language: Language }) {
       )}
 
       <LocationPicker />
-      <div style={{ marginBottom: '16px' }}><DroughtMonitor /></div>
+      <div style={{ marginBottom: '16px' }}>
+        {/* @ts-ignore — onStatusChange is a custom prop we're adding */}
+        <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
+      </div>
       <CropAdvisor />
     </>
   )
