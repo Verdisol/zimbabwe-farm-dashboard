@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
@@ -20,27 +20,9 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-// Dynamically import DroughtMap with SSR disabled, but manually define its props
 const DroughtMap = dynamic<{ onSelect: (data: any) => void }>(
   () => import('./DroughtMap'),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        style={{
-          height: '500px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(255,255,255,0.4)',
-          borderRadius: '16px',
-          color: '#334155',
-        }}
-      >
-        Loading satellite map...
-      </div>
-    ),
-  }
+  { ssr: false }
 )
 
 const cardStyle: React.CSSProperties = {
@@ -87,18 +69,8 @@ export default function DashboardPage() {
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          height: '100vh',
-          overflowY: 'auto',
-        }}
-      >
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', overflowY: 'auto' }}>
         <TopBar />
-
         <main style={{ padding: '24px', flex: 1 }}>
           <div id="export-area">
             {activeTab === 'overview' && <OverviewTab language={language} />}
@@ -123,12 +95,8 @@ export default function DashboardPage() {
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0, textShadow: '0 1px 4px rgba(255,255,255,0.6)' }}>
-        {title}
-      </h1>
-      <p style={{ fontSize: '14px', color: '#334155', margin: '4px 0 0 0', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>
-        {subtitle}
-      </p>
+      <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: 0, textShadow: '0 1px 4px rgba(255,255,255,0.6)' }}>{title}</h1>
+      <p style={{ fontSize: '14px', color: '#334155', margin: '4px 0 0 0', textShadow: '0 1px 3px rgba(255,255,255,0.6)' }}>{subtitle}</p>
     </div>
   )
 }
@@ -187,20 +155,112 @@ function WeatherTab({ language }: { language: Language }) {
 
 function DroughtTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+  const [muted, setMuted] = useState(false)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const oscillatorRef = useRef<OscillatorNode | null>(null)
+  const gainRef = useRef<GainNode | null>(null)
+  const intervalRef = useRef<number | null>(null)
+
+  const isDrought = selectedDistrict && selectedDistrict.score >= 50
+
+  useEffect(() => {
+    const cleanup = () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+      if (oscillatorRef.current) { try { oscillatorRef.current.stop(); oscillatorRef.current.disconnect() } catch {} oscillatorRef.current = null }
+      if (gainRef.current) { try { gainRef.current.disconnect() } catch {} gainRef.current = null }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') { audioCtxRef.current.close().catch(() => {}); audioCtxRef.current = null }
+    }
+
+    cleanup()
+
+    if (!isDrought || muted) return
+
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      audioCtxRef.current = ctx
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'square'
+      osc.frequency.value = 220
+      gain.gain.value = 0.15
+      osc.start()
+      oscillatorRef.current = osc
+      gainRef.current = gain
+
+      let pulse = 0
+      intervalRef.current = window.setInterval(() => {
+        pulse = (pulse + 1) % 2
+        if (gainRef.current) {
+          try { gainRef.current.gain.value = pulse === 0 ? 0.15 : 0.02 } catch {}
+        }
+      }, 400)
+    } catch (e) {
+      console.log('Audio blocked. Click page once to enable.')
+    }
+
+    return () => cleanup()
+  }, [isDrought, muted])
 
   return (
     <>
       <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
+
+      {/* FULL SCREEN RED FLASH OVERLAY */}
+      {isDrought && !muted && (
+        <div className="fullscreen-red-flash" />
+      )}
+
+      {/* Warning banner */}
+      {isDrought && (
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '16px',
+            background: selectedDistrict.score >= 71 ? '#7f1d1d' : '#dc2626',
+            color: 'white',
+            borderRadius: '12px',
+            fontWeight: 700,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 0 20px rgba(220, 38, 38, 0.7)',
+            position: 'relative',
+            zIndex: 99999,
+          }}
+        >
+          <span>
+            ⚠️ DROUGHT WARNING: {selectedDistrict.name} (Score: {selectedDistrict.score.toFixed(0)}/100)
+            {selectedDistrict.score >= 71 ? ' — SEVERE' : ' — ALERT'}
+          </span>
+          <button
+            onClick={() => setMuted(!muted)}
+            style={{
+              background: 'rgba(0,0,0,0.35)',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              position: 'relative',
+              zIndex: 100000,
+            }}
+          >
+            {muted ? '🔇 Unmute & Resume Flash' : '🔊 Mute & Stop Flash'}
+          </button>
+        </div>
+      )}
+
       <DroughtAlert district={selectedDistrict} onClose={() => setSelectedDistrict(null)} />
+
       <div style={{ marginBottom: '20px' }}>
         <DroughtMap onSelect={setSelectedDistrict} />
       </div>
+
       {selectedDistrict && selectedDistrict.indices && (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px',
-          marginBottom: '20px', padding: '16px', background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(0,255,136,0.25)', borderRadius: '16px', boxShadow: '0 0 15px rgba(0,255,136,0.18)',
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', background: 'rgba(255,255,255,0.30)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0,255,136,0.25)', borderRadius: '16px', boxShadow: '0 0 15px rgba(0,255,136,0.18)' }}>
           <IndexTile label="Drought Score" value={`${selectedDistrict.score?.toFixed(0)}/100`} color={selectedDistrict.score >= 71 ? '#dc2626' : selectedDistrict.score >= 51 ? '#f59e0b' : '#16803c'} />
           <IndexTile label="NDVI" value={selectedDistrict.indices.NDVI?.toFixed(2) ?? '—'} color="#16803c" />
           <IndexTile label="SAVI" value={selectedDistrict.indices.SAVI?.toFixed(2) ?? '—'} color="#16803c" />
@@ -209,6 +269,7 @@ function DroughtTab({ language }: { language: Language }) {
           <IndexTile label="NDVI Anomaly" value={`${selectedDistrict.indices.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`} color={(selectedDistrict.indices.NDVI_Anomaly_pct ?? 0) < 0 ? '#dc2626' : '#16803c'} />
         </div>
       )}
+
       <LocationPicker />
       <div style={{ marginBottom: '16px' }}><DroughtMonitor /></div>
       <CropAdvisor />
@@ -257,13 +318,7 @@ function LearnTab({ language }: { language: Language }) {
         {learnCategories.map((c) => {
           const isActive = category === c.key
           return (
-            <button key={c.key} onClick={() => setCategory(c.key)} style={{
-              display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '999px',
-              border: isActive ? '1px solid rgba(0,255,136,0.55)' : '1px solid rgba(255,255,255,0.4)',
-              background: isActive ? 'rgba(0,255,136,0.20)' : 'rgba(255,255,255,0.35)', color: '#0f172a',
-              fontSize: '13px', fontWeight: isActive ? 700 : 500, cursor: 'pointer',
-              boxShadow: isActive ? '0 0 15px rgba(0,255,136,0.40)' : 'none', transition: 'all 0.25s ease', backdropFilter: 'blur(6px)'
-            }}>
+            <button key={c.key} onClick={() => setCategory(c.key)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '999px', border: isActive ? '1px solid rgba(0,255,136,0.55)' : '1px solid rgba(255,255,255,0.4)', background: isActive ? 'rgba(0,255,136,0.20)' : 'rgba(255,255,255,0.35)', color: '#0f172a', fontSize: '13px', fontWeight: isActive ? 700 : 500, cursor: 'pointer', boxShadow: isActive ? '0 0 15px rgba(0,255,136,0.40)' : 'none', transition: 'all 0.25s ease', backdropFilter: 'blur(6px)' }}>
               <span>{c.icon}</span>{c.label}
             </button>
           )
