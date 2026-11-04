@@ -30,33 +30,36 @@ export default function DroughtMap({
     return '#22c55e' // Normal green
   }
 
-  const handleDistrictClick = (feature: any) => {
-    const props = feature.properties
-    const score = props.Drought_Score || 0
-
-    onSelect({
-      name: props.ADM2_NAME || props.ADM1_NAME || 'Unknown',
-      score: score,
-      indices: props,
-    })
-  }
-
-  const onEachFeature = (feature: any, layer: any) => {
-    const score = feature.properties.Drought_Score || 0
-    const color = getColor(score)
-
-    layer.setStyle({
-      fillColor: color,
+  // 1. STYLE FUNCTION (Returns only colors)
+  const getStyle = (feature: any) => {
+    const score = feature?.properties?.Drought_Score || 0
+    return {
+      fillColor: getColor(score),
       fillOpacity: 0.7,
       color: '#fff',
       weight: 1,
-    })
+    }
+  }
+
+  // 2. CLICK/TOOLTIP FUNCTION (Returns events)
+  const onEachFeature = (feature: any, layer: any) => {
+    const props = feature.properties
+    const score = props.Drought_Score || 0
 
     layer.bindTooltip(
-      `${feature.properties.ADM2_NAME || 'District'} (Score: ${score.toFixed(0)})`,
+      `${props.ADM2_NAME || 'District'} (Score: ${score.toFixed(0)})`,
       { sticky: true }
     )
-    layer.on({ click: () => handleDistrictClick(feature) })
+
+    layer.on({
+      click: () => {
+        onSelect({
+          name: props.ADM2_NAME || props.ADM1_NAME || 'Unknown',
+          score: score,
+          indices: props,
+        })
+      },
+    })
   }
 
   if (!geoData) {
@@ -99,7 +102,12 @@ export default function DroughtMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
-        <GeoJSON data={geoData} style={onEachFeature} />
+        {/* Notice: style={getStyle} AND onEachFeature={onEachFeature} */}
+        <GeoJSON
+          data={geoData}
+          style={getStyle}
+          onEachFeature={onEachFeature}
+        />
       </MapContainer>
 
       {/* Legend */}
