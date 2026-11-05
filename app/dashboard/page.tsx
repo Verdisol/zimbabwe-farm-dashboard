@@ -20,6 +20,7 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
+// Dynamic import for the new WardMapSelector (client-only)
 const WardMapSelector = dynamic<{
   onDistrictSelect?: (data: any) => void
   onWardSelect?: (ward: any) => void
@@ -70,6 +71,7 @@ export default function DashboardPage() {
       <div style={{ flexShrink: 0 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
+
       <div
         style={{
           flex: 1,
@@ -81,6 +83,7 @@ export default function DashboardPage() {
         }}
       >
         <TopBar />
+
         <main style={{ padding: '24px', flex: 1 }}>
           <div id="export-area">
             {activeTab === 'overview' && <OverviewTab language={language} />}
@@ -96,6 +99,7 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
       <Toaster position="top-right" richColors />
     </div>
   )
@@ -146,7 +150,15 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-function IndexTile({ label, value, color }: { label: string; value: string; color: string }) {
+function IndexTile({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string
+  color: string
+}) {
   return (
     <div
       style={{
@@ -168,7 +180,14 @@ function IndexTile({ label, value, color }: { label: string; value: string; colo
       >
         {label}
       </p>
-      <p style={{ fontSize: '18px', fontWeight: 800, color, margin: '4px 0 0 0' }}>
+      <p
+        style={{
+          fontSize: '18px',
+          fontWeight: 800,
+          color,
+          margin: '4px 0 0 0',
+        }}
+      >
         {value}
       </p>
     </div>
@@ -199,7 +218,8 @@ function OverviewTab({ language }: { language: Language }) {
             📍 {selectedDistrict.name}
           </h3>
           <p style={{ fontSize: '13px', color: '#1f2937', marginTop: '6px' }}>
-            Drought Score: <strong>{selectedDistrict.score?.toFixed(0) || '—'}/100</strong>
+            Drought Score:{' '}
+            <strong>{selectedDistrict.score?.toFixed(0) || '—'}/100</strong>
             {selectedWard && (
               <>
                 {' '}
@@ -482,7 +502,14 @@ function LearnTab({ language }: { language: Language }) {
         title={t(language, 'tab_learn_title')}
         subtitle={t(language, 'tab_learn_sub')}
       />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '20px',
+        }}
+      >
         {learnCategories.map((c) => {
           const isActive = category === c.key
           return (
@@ -498,7 +525,9 @@ function LearnTab({ language }: { language: Language }) {
                 border: isActive
                   ? '1px solid rgba(0,255,136,0.55)'
                   : '1px solid rgba(255,255,255,0.4)',
-                background: isActive ? 'rgba(0,255,136,0.20)' : 'rgba(255,255,255,0.35)',
+                background: isActive
+                  ? 'rgba(0,255,136,0.20)'
+                  : 'rgba(255,255,255,0.35)',
                 color: '#0f172a',
                 fontSize: '13px',
                 fontWeight: isActive ? 700 : 500,
@@ -541,7 +570,14 @@ function LearnTab({ language }: { language: Language }) {
             >
               {item.title}
             </h3>
-            <p style={{ fontSize: '14px', color: '#1f2937', lineHeight: 1.6, marginTop: '8px' }}>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#1f2937',
+                lineHeight: 1.6,
+                marginTop: '8px',
+              }}
+            >
               {item.body}
             </p>
             {item.action && (
@@ -553,7 +589,14 @@ function LearnTab({ language }: { language: Language }) {
                   borderRadius: '10px',
                 }}
               >
-                <p style={{ fontSize: '13px', color: '#334155', margin: 0, fontWeight: 500 }}>
+                <p
+                  style={{
+                    fontSize: '13px',
+                    color: '#334155',
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
                   💊 <strong>Action:</strong> {item.action}
                 </p>
               </div>
@@ -576,10 +619,24 @@ function HelpTab({ language }: { language: Language }) {
         <h3 style={{ fontSize: '16px', color: '#0f172a', margin: 0, fontWeight: 700 }}>
           Need help with your farm?
         </h3>
-        <p style={{ fontSize: '14px', color: '#1f2937', lineHeight: 1.7, marginTop: '10px' }}>
+        <p
+          style={{
+            fontSize: '14px',
+            color: '#1f2937',
+            lineHeight: 1.7,
+            marginTop: '10px',
+          }}
+        >
           Our agriculture consultants can help you with:
         </p>
-        <ul style={{ color: '#1f2937', lineHeight: 1.9, marginTop: '8px', fontSize: '14px' }}>
+        <ul
+          style={{
+            color: '#1f2937',
+            lineHeight: 1.9,
+            marginTop: '8px',
+            fontSize: '14px',
+          }}
+        >
           <li>Pest and disease identification and treatment</li>
           <li>Choosing the right crop variety for your district</li>
           <li>Understanding the Random Forest yield predictions</li>
