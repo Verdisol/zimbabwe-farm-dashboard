@@ -59,7 +59,8 @@ export default function WardMapSelector({
   const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
   useEffect(() => {
-    fetch('/data/districts.json')
+    // Correct path: districts.geojson
+    fetch('/data/districts.geojson')
       .then((r) => r.json())
       .then((data) => {
         setDistrictGeo(data)
@@ -75,7 +76,7 @@ export default function WardMapSelector({
         setDistrictNames(unique)
         console.log('✅ Loaded', data.features?.length, 'districts')
       })
-      .catch(() => console.log('❌ districts.json not found'))
+      .catch(() => console.log('❌ districts.geojson not found'))
 
     fetch('/data/zimwards.geojson')
       .then((r) => r.json())
