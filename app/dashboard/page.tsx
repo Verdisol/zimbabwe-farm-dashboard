@@ -156,22 +156,30 @@ function DroughtTab({ language }: { language: Language }) {
   const [rainfallStatus, setRainfallStatus] = useState<string>('normal')
   const [muted, setMuted] = useState(false)
   
-  // We use a ref to track if the user has interacted with the page
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const isAudioUnlocked = useRef(false)
 
   const satelliteDrought = selectedDistrict && selectedDistrict.score >= 51
   const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
   const isDrought = satelliteDrought || rainfallDrought
 
-  // 1. Unlock audio on the first user click anywhere on the page
+  // 1. Initialize audio and unlock on first click
   useEffect(() => {
+    // Create the audio element pointing to your MP3
+    const audio = new Audio('https://cdn.pixabay.com/download/audio/2026/06/02/audio_26933dce5c.mp3?filename=tithuh-warning-545568.mp3')
+    audio.loop = true
+    audioRef.current = audio
+
     const unlockAudio = () => {
       if (isAudioUnlocked.current) return
       isAudioUnlocked.current = true
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      if (ctx.state === 'suspended') {
-        ctx.resume()
-      }
+      
+      // Play and immediately pause to satisfy browser autoplay policies
+      audio.play().then(() => {
+        audio.pause()
+        audio.currentTime = 0
+      }).catch(e => console.log('Audio unlock failed', e))
+
       window.removeEventListener('click', unlockAudio)
       window.removeEventListener('touchstart', unlockAudio)
     }
@@ -182,51 +190,21 @@ function DroughtTab({ language }: { language: Language }) {
     return () => {
       window.removeEventListener('click', unlockAudio)
       window.removeEventListener('touchstart', unlockAudio)
+      audio.pause()
     }
   }, [])
 
-  // 2. Play sound automatically when drought is detected (if not muted)
+  // 2. Play/Stop the MP3 based on drought status and mute state
   useEffect(() => {
-    if (!isDrought || muted) return
+    if (!audioRef.current) return
 
-    let ctx: AudioContext | null = null
-    let osc: OscillatorNode | null = null
-    let gain: GainNode | null = null
-    let interval: any = null
-
-    try {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      
-      // If the browser is blocking it, we skip (the click unlock will handle it)
-      if (ctx.state === 'suspended') {
-        ctx.resume()
-      }
-
-      osc = ctx.createOscillator()
-      gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.type = 'square'
-      osc.frequency.value = 220 
-      gain.gain.value = 0.15
-      osc.start()
-
-      let pulse = 0
-      interval = setInterval(() => {
-        pulse = (pulse + 1) % 2
-        if (gain) gain.gain.value = pulse === 0 ? 0.15 : 0.02
-      }, 400)
-
-      return () => {
-        if (interval) clearInterval(interval)
-        if (osc) { try { osc.stop(); osc.disconnect(); } catch {} }
-        if (gain) { try { gain.disconnect(); } catch {} }
-        if (ctx) { try { ctx.close(); } catch {} }
-      }
-    } catch (e) {
-      console.log('Audio playback prevented:', e)
+    if (isDrought && !muted) {
+      audioRef.current.play().catch(e => console.log('Audio blocked:', e))
+    } else {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
     }
-  }, [isDrought, muted, selectedDistrict])
+  }, [isDrought, muted])
 
   return (
     <>
