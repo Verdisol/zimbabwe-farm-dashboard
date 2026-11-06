@@ -30,15 +30,20 @@ function getField(props: any, candidates: string[]): string {
   return ''
 }
 
+// Added your exact field name 'admin2Name'
 const DISTRICT_NAME_FIELDS = [
+  'admin2Name', 
   'ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district',
   'DIST_NAME', 'NAME', 'name', 'District',
 ]
+
 const WARD_NAME_FIELDS = [
   'ADM3_NAME', 'ADM3_EN', 'ADM3', 'WARD_NAME', 'WARD',
-  'ward', 'NAME', 'name', 'Ward',
+  'ward', 'NAME', 'name', 'Ward', 'admin3Name'
 ]
+
 const WARD_DISTRICT_FIELDS = [
+  'admin2Name',
   'ADM2_NAME', 'ADM2_EN', 'ADM2', 'DISTRICT', 'district',
   'PARENT', 'parent', 'DIST_NAME', 'District',
 ]
@@ -59,7 +64,6 @@ export default function WardMapSelector({
   const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
   useEffect(() => {
-    // 1. Load districts.json
     fetch('/data/districts.json')
       .then((r) => {
         if (!r.ok) throw new Error('Districts file not found')
@@ -77,11 +81,10 @@ export default function WardMapSelector({
         const unique: string[] = Array.from(new Set(names))
         unique.sort()
         setDistrictNames(unique)
-        console.log('✅ Loaded districts:', data.features?.length)
+        console.log('✅ Loaded districts:', data.features?.length, 'Unique names:', unique.length)
       })
       .catch((err) => console.log('❌ districts.json failed:', err.message))
 
-    // 2. Load wards
     fetch('/data/zimwards.geojson')
       .then((r) => r.json())
       .then((data) => {
@@ -90,7 +93,6 @@ export default function WardMapSelector({
       })
       .catch(() => console.log('❌ zimwards.geojson not found'))
 
-    // 3. Load drought lookup
     fetch('/data/ZIM_Drought_Master_Final.geojson')
       .then((r) => r.json())
       .then((data) => {
@@ -145,7 +147,7 @@ export default function WardMapSelector({
           color: '#334155',
         }}
       >
-        Loading district data... (If this takes more than 10 seconds, the file is too large. Simplify it with Mapshaper)
+        Loading district data...
       </div>
     )
   }
