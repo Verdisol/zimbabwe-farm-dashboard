@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
@@ -19,7 +19,7 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-// Keep the map but don't use it for location selection
+// We still import it for the Overview and Map tabs, but NOT for Drought
 const WardMapSelector = dynamic<{
   height?: string
   showLegend?: boolean
@@ -94,7 +94,6 @@ function OverviewTab({ language }: { language: Language }) {
     <>
       <SectionHeading title={t(language, 'tab_overview_title')} subtitle="Your farm at a glance" />
       
-      {/* Location Picker is BACK */}
       <LocationPicker />
 
       <div style={{ marginBottom: '16px' }}>
@@ -133,32 +132,63 @@ function WeatherTab({ language }: { language: Language }) {
   )
 }
 
+// DROUGHT TAB: Map removed. Only dropdown, alerts, and data.
 function DroughtTab({ language }: { language: Language }) {
   const [muted, setMuted] = useState(false)
   const [rainfallStatus, setRainfallStatus] = useState('normal')
+  const [audioReady, setAudioReady] = useState(false)
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const isDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
+  const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
+
+  useEffect(() => {
+    const audio = new Audio('/sounds/warning.mp3')
+    audio.loop = true
+    audioRef.current = audio
+    return () => { audio.pause() }
+  }, [])
+
+  useEffect(() => {
+    if (!audioRef.current || !audioReady) return
+    if (rainfallDrought && !muted) {
+      audioRef.current.play().catch(e => console.log('Audio blocked:', e))
+    } else {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+  }, [rainfallDrought, muted, audioReady])
+
+  const unlockAndPlaySound = () => {
+    setAudioReady(true)
+    setMuted(false)
+    if (audioRef.current) audioRef.current.play().catch(e => console.log('Audio error:', e))
+  }
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
+      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Select a district to view its historical drought analysis" />
 
-      {isDrought && !muted && <div className="fullscreen-red-flash" />}
+      {rainfallDrought && !muted && <div className="fullscreen-red-flash" />}
 
-      {isDrought && (
+      {rainfallDrought && (
         <div style={{ marginBottom: '16px', padding: '16px', background: '#dc2626', color: 'white', borderRadius: '12px', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 99999 }}>
           <span>⚠️ DROUGHT WARNING</span>
-          <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-            {muted ? '🔇 Unmute' : '🔊 Mute'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!audioReady ? (
+              <button onClick={unlockAndPlaySound} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                🔊 Enable Sound
+              </button>
+            ) : (
+              <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                {muted ? '🔇 Unmute' : '🔊 Mute'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       <LocationPicker />
-
-      <div style={{ marginBottom: '20px' }}>
-        <WardMapSelector height="500px" />
-      </div>
 
       <div style={{ marginBottom: '16px' }}>
         <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
