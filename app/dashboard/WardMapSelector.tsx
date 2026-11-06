@@ -1,81 +1,31 @@
 'use client'
 
-import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
 import { useEffect, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
-
-type Props = {
-  onDistrictSelect?: (data: any) => void
-  onWardSelect?: (ward: any) => void
-  height?: string
-  showLegend?: boolean
-}
-
-function ZoomToFeature({ bounds }: { bounds: L.LatLngBounds | null }) {
-  const map = useMap()
-  useEffect(() => {
-    if (bounds) map.fitBounds(bounds, { padding: [20, 20] })
-  }, [bounds, map])
-  return null
-}
-
-function getField(props: any, candidates: string[]): string {
-  if (!props) return ''
-  for (const key of candidates) {
-    if (props[key] !== undefined && props[key] !== null && props[key] !== '') {
-      return String(props[key])
-    }
-  }
-  return ''
-}
-
-// Using your exact field names
-const DISTRICT_NAME_FIELDS = ['DISTNAME', 'admin2Name', 'ADM2_NAME', 'NAME', 'name']
-const WARD_NAME_FIELDS = ['WARD', 'ADM3_NAME', 'WARD_NAME', 'NAME']
-const WARD_DISTRICT_FIELDS = ['DISTNAME', 'admin2Name', 'ADM2_NAME']
 
 export default function WardMapSelector({
-  onDistrictSelect,
-  onWardSelect,
   height = '500px',
   showLegend = true,
-}: Props) {
+}: {
+  height?: string
+  showLegend?: boolean
+}) {
   const [districtGeo, setDistrictGeo] = useState<any>(null)
-  const [wardGeo, setWardGeo] = useState<any>(null)
   const [droughtLookup, setDroughtLookup] = useState<Record<string, any>>({})
-  const [districtNames, setDistrictNames] = useState<string[]>([])
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('')
-  const [wardOptions, setWardOptions] = useState<any[]>([])
-  const [selectedWard, setSelectedWard] = useState<string>('')
-  const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
   useEffect(() => {
     fetch('/data/districts.json')
       .then((r) => r.json())
-      .then((data) => {
-        setDistrictGeo(data)
-        // Use admin2Name for districts as you confirmed earlier
-        const rawNames = (data.features || []).map((f: any) => getField(f.properties, ['admin2Name', ...DISTRICT_NAME_FIELDS]))
-        const names: string[] = []
-        rawNames.forEach((n: string) => { if (n && n !== '') names.push(n) })
-        const unique: string[] = Array.from(new Set(names))
-        unique.sort()
-        setDistrictNames(unique)
-      })
+      .then((data) => setDistrictGeo(data))
       .catch((err) => console.log('❌ districts.json failed:', err.message))
-
-    fetch('/data/zimwards.geojson')
-      .then((r) => r.json())
-      .then((data) => setWardGeo(data))
-      .catch(() => console.log('❌ zimwards.geojson not found'))
 
     fetch('/data/ZIM_Drought_Master_Final.geojson')
       .then((r) => r.json())
       .then((data) => {
         const lookup: Record<string, any> = {}
         ;(data.features || []).forEach((f: any) => {
-          const name = getField(f.properties, ['admin2Name', ...DISTRICT_NAME_FIELDS])
+          const name = f.properties.admin2Name || f.properties.ADM2_NAME || f.properties.DISTNAME
           if (name) lookup[name] = f.properties
         })
         setDroughtLookup(lookup)
@@ -90,131 +40,47 @@ export default function WardMapSelector({
     return '#22c55e'
   }
 
-  const handleDistrictChange = (name: string) => {
-    setSelectedDistrict(name)
-    setSelectedWard('')
-    
-    const filtered = (wardGeo?.features || []).filter(
-      (f: any) => getField(f.properties, WARD_DISTRICT_FIELDS) === name
-    )
-    
-    setWardOptions(filtered)
-    const droughtProps = droughtLookup[name] || {}
-    const score = droughtProps.Drought_Score || 0
-    if (onDistrictSelect) onDistrictSelect({ name, score, indices: droughtProps })
-  }
-
-  const handleWardChange = (wardName: string) => {
-    setSelectedWard(wardName)
-    const ward = wardOptions.find((f: any) => getField(f.properties, WARD_NAME_FIELDS) === wardName)
-    if (ward && onWardSelect) onWardSelect(ward)
-  }
-
   if (!districtGeo) {
-    return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', color: '#334155' }}>Loading district data...</div>
+    return <div style={{ height, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.4)', borderRadius: '16px', color: '#334155' }}>Loading map...</div>
   }
-
-  const filteredWards = wardOptions.length > 0 ? ({ type: 'FeatureCollection', features: wardOptions } as any) : null
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-        <select
-          value={selectedDistrict}
-          onChange={(e) => handleDistrictChange(e.target.value)}
-          style={{ flex: 1, minWidth: '180px', height: '44px', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '10px', background: 'rgba(255,255,255,0.92)', fontSize: '14px' }}
-        >
-          <option value="">-- Select District ({districtNames.length}) --</option>
-          {districtNames.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
+    <div style={{ position: 'relative', height, width: '100%', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 0 15px rgba(0,255,136,0.25)', border: '1px solid rgba(0,255,136,0.30)', zIndex: 1 }}>
+      <MapContainer center={[-19.015, 29.155]} zoom={6} style={{ height: '100%', width: '100%' }}>
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-        <select
-          value={selectedWard}
-          onChange={(e) => handleWardChange(e.target.value)}
-          disabled={!selectedDistrict}
-          style={{ flex: 1, minWidth: '180px', height: '44px', padding: '0 12px', border: '1px solid #d1d5db', borderRadius: '10px', background: 'rgba(255,255,255,0.92)', fontSize: '14px' }}
-        >
-          <option value="">
-            {!selectedDistrict ? 'Choose district first' : wardOptions.length === 0 ? 'No wards found' : `-- Select Ward (${wardOptions.length}) --`}
-          </option>
-          {wardOptions.map((w: any, i: number) => {
-            const name = getField(w.properties, WARD_NAME_FIELDS) || `Ward ${i + 1}`
-            return <option key={`${name}-${i}`} value={name}>{name}</option>
-          })}
-        </select>
-      </div>
+        <GeoJSON
+          data={districtGeo}
+          style={(f: any) => {
+            const name = f.properties.admin2Name || f.properties.ADM2_NAME || f.properties.DISTNAME
+            const props = droughtLookup[name]
+            const score = props?.Drought_Score || 0
+            return {
+              fillColor: props ? getColor(score) : '#94a3b8',
+              fillOpacity: 0.65,
+              color: '#fff',
+              weight: 1,
+            }
+          }}
+          onEachFeature={(feature: any, layer: any) => {
+            const name = feature.properties.admin2Name || feature.properties.ADM2_NAME || feature.properties.DISTNAME || 'District'
+            const props = droughtLookup[name]
+            const score = props?.Drought_Score || 0
+            layer.bindTooltip(props ? `${name} (Score: ${score.toFixed(0)})` : `${name}`, { sticky: true })
+          }}
+        />
+      </MapContainer>
 
-      <div style={{ position: 'relative', height, width: '100%', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 0 15px rgba(0,255,136,0.25)', border: '1px solid rgba(0,255,136,0.30)', zIndex: 1 }}>
-        <MapContainer center={[-19.015, 29.155]} zoom={6} style={{ height: '100%', width: '100%' }}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-          <GeoJSON
-            data={districtGeo}
-            style={(f: any) => {
-              const name = getField(f.properties, ['admin2Name', ...DISTRICT_NAME_FIELDS])
-              const props = droughtLookup[name]
-              const score = props?.Drought_Score || 0
-              const isSelected = name === selectedDistrict
-              return {
-                fillColor: props ? getColor(score) : '#94a3b8',
-                fillOpacity: isSelected ? 0.9 : 0.65,
-                color: isSelected ? '#0f172a' : '#fff',
-                weight: isSelected ? 3 : 1,
-              }
-            }}
-            onEachFeature={(feature: any, layer: any) => {
-              const name = getField(feature.properties, ['admin2Name', ...DISTRICT_NAME_FIELDS])
-              const props = droughtLookup[name]
-              const score = props?.Drought_Score || 0
-              layer.bindTooltip(props ? `${name} (Score: ${score.toFixed(0)})` : `${name}`, { sticky: true })
-              layer.on({
-                click: () => {
-                  setSelectedDistrict(name)
-                  setZoomBounds(layer.getBounds())
-                  const filtered = (wardGeo?.features || []).filter(
-                    (f: any) => getField(f.properties, WARD_DISTRICT_FIELDS) === name
-                  )
-                  setWardOptions(filtered)
-                  setSelectedWard('')
-                  if (onDistrictSelect) onDistrictSelect({ name, score, indices: props || {} })
-                },
-              })
-            }}
-          />
-
-          {filteredWards && (
-            <GeoJSON
-              key={selectedDistrict}
-              data={filteredWards}
-              style={{ fillColor: 'transparent', fillOpacity: 0, color: '#0f172a', weight: 1.5, dashArray: '4' }}
-              onEachFeature={(feature: any, layer: any) => {
-                const wardName = getField(feature.properties, WARD_NAME_FIELDS) || 'Ward'
-                layer.bindTooltip(wardName, { sticky: true })
-                layer.on({
-                  click: (e: any) => {
-                    L.DomEvent.stopPropagation(e)
-                    setSelectedWard(wardName)
-                    setZoomBounds(layer.getBounds())
-                    if (onWardSelect) onWardSelect(feature)
-                  },
-                })
-              }}
-            />
-          )}
-          <ZoomToFeature bounds={zoomBounds} />
-        </MapContainer>
-
-        {showLegend && (
-          <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(255,255,255,0.95)', padding: '12px', borderRadius: '10px', zIndex: 1000, fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontWeight: 700, marginBottom: '6px' }}>Drought Score</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#22c55e' }} /> 0–30 Normal</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#eab308' }} /> 31–50 Watch</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f97316' }} /> 51–70 Alert</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444' }} /> 71–100 Severe</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#94a3b8' }} /> No data</div>
-          </div>
-        )}
-      </div>
+      {showLegend && (
+        <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'rgba(255,255,255,0.95)', padding: '12px', borderRadius: '10px', zIndex: 1000, fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+          <div style={{ fontWeight: 700, marginBottom: '6px' }}>Drought Score</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#22c55e' }} /> 0–30 Normal</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#eab308' }} /> 31–50 Watch</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f97316' }} /> 51–70 Alert</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444' }} /> 71–100 Severe</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#94a3b8' }} /> No data</div>
+        </div>
+      )}
     </div>
   )
 }
