@@ -19,7 +19,6 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-// We still import it for the Overview and Map tabs, but NOT for Drought
 const WardMapSelector = dynamic<{
   height?: string
   showLegend?: boolean
@@ -89,19 +88,17 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
   return <div style={{ borderRadius: '16px', border: '1px solid rgba(0,255,136,0.20)', boxShadow: '0 0 15px rgba(0,255,136,0.18)', transition: 'all 0.3s ease', overflow: 'hidden', height: '100%' }}>{children}</div>
 }
 
+// 1. OVERVIEW TAB: No map here anymore.
 function OverviewTab({ language }: { language: Language }) {
   return (
     <>
       <SectionHeading title={t(language, 'tab_overview_title')} subtitle="Your farm at a glance" />
       
       <LocationPicker />
-
-      <div style={{ marginBottom: '16px' }}>
-        <WardMapSelector height="400px" />
-      </div>
-
       <StatCards />
+      
       <div style={{ marginBottom: '16px' }}><GlowWrapper><WeatherCard /></GlowWrapper></div>
+      
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
         <GlowWrapper><PredictionCard /></GlowWrapper>
         <GlowWrapper><ChartSection /></GlowWrapper>
@@ -110,13 +107,19 @@ function OverviewTab({ language }: { language: Language }) {
   )
 }
 
+// 2. MAP TAB: We will use the old MapView (basic OSM) for general exploring, 
+// or you can remove this tab entirely if you only want the drought map.
+// For now, let's keep it as the basic map view so it's not blank.
+import MapView from './MapView'
 function MapTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_map_title')} subtitle="Explore drought conditions across districts" />
+      <SectionHeading title={t(language, 'tab_map_title')} subtitle="Explore your district and surrounding areas" />
       <LocationPicker />
       <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
-        <WardMapSelector height="100%" />
+        <GlowWrapper>
+          <MapView />
+        </GlowWrapper>
       </div>
     </>
   )
@@ -132,7 +135,7 @@ function WeatherTab({ language }: { language: Language }) {
   )
 }
 
-// DROUGHT TAB: Map removed. Only dropdown, alerts, and data.
+// 3. DROUGHT TAB: This is the ONLY place with the Drought Map.
 function DroughtTab({ language }: { language: Language }) {
   const [muted, setMuted] = useState(false)
   const [rainfallStatus, setRainfallStatus] = useState('normal')
@@ -167,7 +170,7 @@ function DroughtTab({ language }: { language: Language }) {
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Select a district to view its historical drought analysis" />
+      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
 
       {rainfallDrought && !muted && <div className="fullscreen-red-flash" />}
 
@@ -189,6 +192,11 @@ function DroughtTab({ language }: { language: Language }) {
       )}
 
       <LocationPicker />
+
+      {/* THE MAP IS ONLY HERE */}
+      <div style={{ marginBottom: '20px' }}>
+        <WardMapSelector height="500px" />
+      </div>
 
       <div style={{ marginBottom: '16px' }}>
         <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
