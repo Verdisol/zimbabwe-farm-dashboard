@@ -14,7 +14,6 @@ import Market from './Market'
 import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
-import LocationPicker from './LocationPicker'
 import CropAdvisor from './CropAdvisor'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
@@ -100,17 +99,19 @@ function IndexTile({ label, value, color }: { label: string; value: string; colo
   )
 }
 
+// OVERVIEW TAB: Now uses the map as the primary location picker
 function OverviewTab({ language }: { language: Language }) {
   const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
   const [selectedWard, setSelectedWard] = useState<any>(null)
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_overview_title')} subtitle={t(language, 'tab_overview_sub')} />
-      <LocationPicker />
+      <SectionHeading title={t(language, 'tab_overview_title')} subtitle="Select a district on the map to update weather and predictions" />
+      
       <div style={{ marginBottom: '16px' }}>
         <WardMapSelector height="420px" onDistrictSelect={setSelectedDistrict} onWardSelect={setSelectedWard} />
       </div>
+
       {selectedDistrict && (
         <div style={{ ...cardStyle, marginBottom: '16px' }}>
           <h3 style={{ fontSize: '15px', color: '#0f3d20', margin: 0, fontWeight: 700 }}>📍 {selectedDistrict.name}</h3>
@@ -120,6 +121,7 @@ function OverviewTab({ language }: { language: Language }) {
           </p>
         </div>
       )}
+
       <StatCards />
       <div style={{ marginBottom: '16px' }}><GlowWrapper><WeatherCard /></GlowWrapper></div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
@@ -131,20 +133,29 @@ function OverviewTab({ language }: { language: Language }) {
 }
 
 function MapTab({ language }: { language: Language }) {
+  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+  const [selectedWard, setSelectedWard] = useState<any>(null)
+
   return (
     <>
-      <SectionHeading title={t(language, 'tab_map_title')} subtitle={t(language, 'tab_map_sub')} />
-      <LocationPicker />
-      <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}><GlowWrapper><MapView /></GlowWrapper></div>
+      <SectionHeading title={t(language, 'tab_map_title')} subtitle="Explore drought conditions across districts and wards" />
+      <div style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+        <WardMapSelector height="100%" onDistrictSelect={setSelectedDistrict} onWardSelect={setSelectedWard} />
+      </div>
     </>
   )
 }
 
+// WEATHER TAB: Now uses the map to select the district
 function WeatherTab({ language }: { language: Language }) {
+  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
+
   return (
     <>
-      <SectionHeading title={t(language, 'tab_weather_title')} subtitle={t(language, 'tab_weather_sub')} />
-      <LocationPicker />
+      <SectionHeading title={t(language, 'tab_weather_title')} subtitle="Select a district on the map to see its weather" />
+      <div style={{ marginBottom: '20px' }}>
+        <WardMapSelector height="400px" onDistrictSelect={setSelectedDistrict} />
+      </div>
       <GlowWrapper><WeatherCard /></GlowWrapper>
     </>
   )
@@ -155,56 +166,36 @@ function DroughtTab({ language }: { language: Language }) {
   const [selectedWard, setSelectedWard] = useState<any>(null)
   const [rainfallStatus, setRainfallStatus] = useState<string>('normal')
   const [muted, setMuted] = useState(false)
+  const [audioReady, setAudioReady] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement | null>(null)
-  const isAudioUnlocked = useRef(false)
 
   const satelliteDrought = selectedDistrict && selectedDistrict.score >= 51
   const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
   const isDrought = satelliteDrought || rainfallDrought
 
-  // 1. Initialize audio and unlock on first click
   useEffect(() => {
-    // Create the audio element pointing to your MP3
-    const audio = new Audio('https://cdn.pixabay.com/download/audio/2026/06/02/audio_26933dce5c.mp3?filename=tithuh-warning-545568.mp3')
+    const audio = new Audio('/sounds/warning.mp3')
     audio.loop = true
     audioRef.current = audio
-
-    const unlockAudio = () => {
-      if (isAudioUnlocked.current) return
-      isAudioUnlocked.current = true
-      
-      // Play and immediately pause to satisfy browser autoplay policies
-      audio.play().then(() => {
-        audio.pause()
-        audio.currentTime = 0
-      }).catch(e => console.log('Audio unlock failed', e))
-
-      window.removeEventListener('click', unlockAudio)
-      window.removeEventListener('touchstart', unlockAudio)
-    }
-
-    window.addEventListener('click', unlockAudio)
-    window.addEventListener('touchstart', unlockAudio)
-
-    return () => {
-      window.removeEventListener('click', unlockAudio)
-      window.removeEventListener('touchstart', unlockAudio)
-      audio.pause()
-    }
+    return () => { audio.pause() }
   }, [])
 
-  // 2. Play/Stop the MP3 based on drought status and mute state
   useEffect(() => {
-    if (!audioRef.current) return
-
+    if (!audioRef.current || !audioReady) return
     if (isDrought && !muted) {
       audioRef.current.play().catch(e => console.log('Audio blocked:', e))
     } else {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
     }
-  }, [isDrought, muted])
+  }, [isDrought, muted, audioReady])
+
+  const unlockAndPlaySound = () => {
+    setAudioReady(true)
+    setMuted(false)
+    if (audioRef.current) audioRef.current.play().catch(e => console.log('Audio error:', e))
+  }
 
   return (
     <>
@@ -215,9 +206,17 @@ function DroughtTab({ language }: { language: Language }) {
       {isDrought && (
         <div style={{ marginBottom: '16px', padding: '16px', background: '#dc2626', color: 'white', borderRadius: '12px', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 99999 }}>
           <span>⚠️ DROUGHT WARNING — {selectedDistrict?.name}</span>
-          <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-            {muted ? '🔇 Unmute' : '🔊 Mute'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!audioReady ? (
+              <button onClick={unlockAndPlaySound} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                🔊 Enable Sound
+              </button>
+            ) : (
+              <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                {muted ? '🔇 Unmute' : '🔊 Mute'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -247,7 +246,6 @@ function DroughtTab({ language }: { language: Language }) {
         </div>
       )}
 
-      <LocationPicker />
       <div style={{ marginBottom: '16px' }}>
         <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
       </div>
