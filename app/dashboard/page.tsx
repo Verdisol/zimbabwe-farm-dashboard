@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
-import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
 import DroughtAlert from './DroughtAlert'
@@ -14,14 +13,14 @@ import Market from './Market'
 import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
+import LocationPicker from './LocationPicker'
 import CropAdvisor from './CropAdvisor'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
+// Keep the map but don't use it for location selection
 const WardMapSelector = dynamic<{
-  onDistrictSelect?: (data: any) => void
-  onWardSelect?: (ward: any) => void
   height?: string
   showLegend?: boolean
 }>(() => import('./WardMapSelector'), { ssr: false })
@@ -90,37 +89,17 @@ function GlowWrapper({ children }: { children: React.ReactNode }) {
   return <div style={{ borderRadius: '16px', border: '1px solid rgba(0,255,136,0.20)', boxShadow: '0 0 15px rgba(0,255,136,0.18)', transition: 'all 0.3s ease', overflow: 'hidden', height: '100%' }}>{children}</div>
 }
 
-function IndexTile({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div style={{ background: 'rgba(255,255,255,0.55)', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
-      <p style={{ fontSize: '10px', color: '#475569', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}</p>
-      <p style={{ fontSize: '18px', fontWeight: 800, color, margin: '4px 0 0 0' }}>{value}</p>
-    </div>
-  )
-}
-
-// OVERVIEW TAB: Now uses the map as the primary location picker
 function OverviewTab({ language }: { language: Language }) {
-  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
-  const [selectedWard, setSelectedWard] = useState<any>(null)
-
   return (
     <>
-      <SectionHeading title={t(language, 'tab_overview_title')} subtitle="Select a district on the map to update weather and predictions" />
+      <SectionHeading title={t(language, 'tab_overview_title')} subtitle="Your farm at a glance" />
       
-      <div style={{ marginBottom: '16px' }}>
-        <WardMapSelector height="420px" onDistrictSelect={setSelectedDistrict} onWardSelect={setSelectedWard} />
-      </div>
+      {/* Location Picker is BACK */}
+      <LocationPicker />
 
-      {selectedDistrict && (
-        <div style={{ ...cardStyle, marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '15px', color: '#0f3d20', margin: 0, fontWeight: 700 }}>📍 {selectedDistrict.name}</h3>
-          <p style={{ fontSize: '13px', color: '#1f2937', marginTop: '6px' }}>
-            Drought Score: <strong>{selectedDistrict.score?.toFixed(0) || '—'}/100</strong>
-            {selectedWard && <> · Ward: <strong>{selectedWard.properties?.WARD || selectedWard.properties?.ADM3_NAME || 'Selected'}</strong></>}
-          </p>
-        </div>
-      )}
+      <div style={{ marginBottom: '16px' }}>
+        <WardMapSelector height="400px" />
+      </div>
 
       <StatCards />
       <div style={{ marginBottom: '16px' }}><GlowWrapper><WeatherCard /></GlowWrapper></div>
@@ -133,118 +112,53 @@ function OverviewTab({ language }: { language: Language }) {
 }
 
 function MapTab({ language }: { language: Language }) {
-  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
-  const [selectedWard, setSelectedWard] = useState<any>(null)
-
   return (
     <>
-      <SectionHeading title={t(language, 'tab_map_title')} subtitle="Explore drought conditions across districts and wards" />
-      <div style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
-        <WardMapSelector height="100%" onDistrictSelect={setSelectedDistrict} onWardSelect={setSelectedWard} />
+      <SectionHeading title={t(language, 'tab_map_title')} subtitle="Explore drought conditions across districts" />
+      <LocationPicker />
+      <div style={{ height: 'calc(100vh - 340px)', minHeight: '520px' }}>
+        <WardMapSelector height="100%" />
       </div>
     </>
   )
 }
 
-// WEATHER TAB: Now uses the map to select the district
 function WeatherTab({ language }: { language: Language }) {
-  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
-
   return (
     <>
-      <SectionHeading title={t(language, 'tab_weather_title')} subtitle="Select a district on the map to see its weather" />
-      <div style={{ marginBottom: '20px' }}>
-        <WardMapSelector height="400px" onDistrictSelect={setSelectedDistrict} />
-      </div>
+      <SectionHeading title={t(language, 'tab_weather_title')} subtitle="Current conditions and 7-day forecast" />
+      <LocationPicker />
       <GlowWrapper><WeatherCard /></GlowWrapper>
     </>
   )
 }
 
 function DroughtTab({ language }: { language: Language }) {
-  const [selectedDistrict, setSelectedDistrict] = useState<any>(null)
-  const [selectedWard, setSelectedWard] = useState<any>(null)
-  const [rainfallStatus, setRainfallStatus] = useState<string>('normal')
   const [muted, setMuted] = useState(false)
-  const [audioReady, setAudioReady] = useState(false)
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [rainfallStatus, setRainfallStatus] = useState('normal')
 
-  const satelliteDrought = selectedDistrict && selectedDistrict.score >= 51
-  const rainfallDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
-  const isDrought = satelliteDrought || rainfallDrought
-
-  useEffect(() => {
-    const audio = new Audio('/sounds/warning.mp3')
-    audio.loop = true
-    audioRef.current = audio
-    return () => { audio.pause() }
-  }, [])
-
-  useEffect(() => {
-    if (!audioRef.current || !audioReady) return
-    if (isDrought && !muted) {
-      audioRef.current.play().catch(e => console.log('Audio blocked:', e))
-    } else {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-    }
-  }, [isDrought, muted, audioReady])
-
-  const unlockAndPlaySound = () => {
-    setAudioReady(true)
-    setMuted(false)
-    if (audioRef.current) audioRef.current.play().catch(e => console.log('Audio error:', e))
-  }
+  const isDrought = rainfallStatus === 'drought' || rainfallStatus === 'extreme-drought'
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Select district and ward to see spatial drought analysis" />
+      <SectionHeading title={t(language, 'tab_drought_title')} subtitle="Spatial drought monitoring using satellite indices and live weather data" />
 
       {isDrought && !muted && <div className="fullscreen-red-flash" />}
 
       {isDrought && (
         <div style={{ marginBottom: '16px', padding: '16px', background: '#dc2626', color: 'white', borderRadius: '12px', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 99999 }}>
-          <span>⚠️ DROUGHT WARNING — {selectedDistrict?.name}</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {!audioReady ? (
-              <button onClick={unlockAndPlaySound} style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                🔊 Enable Sound
-              </button>
-            ) : (
-              <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                {muted ? '🔇 Unmute' : '🔊 Mute'}
-              </button>
-            )}
-          </div>
+          <span>⚠️ DROUGHT WARNING</span>
+          <button onClick={() => setMuted(!muted)} style={{ background: 'rgba(0,0,0,0.35)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+            {muted ? '🔇 Unmute' : '🔊 Mute'}
+          </button>
         </div>
       )}
 
-      <DroughtAlert district={selectedDistrict} onClose={() => setSelectedDistrict(null)} />
+      <LocationPicker />
 
       <div style={{ marginBottom: '20px' }}>
-        <WardMapSelector height="500px" onDistrictSelect={setSelectedDistrict} onWardSelect={setSelectedWard} />
+        <WardMapSelector height="500px" />
       </div>
-
-      {selectedDistrict && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', background: 'rgba(255,255,255,0.30)', borderRadius: '16px' }}>
-          <IndexTile label="Drought Score" value={`${selectedDistrict.score?.toFixed(0) || '—'}/100`} color={selectedDistrict.score >= 71 ? '#dc2626' : selectedDistrict.score >= 51 ? '#f59e0b' : '#16803c'} />
-          <IndexTile label="NDVI" value={selectedDistrict.indices?.NDVI?.toFixed(2) ?? '—'} color="#16803c" />
-          <IndexTile label="SAVI" value={selectedDistrict.indices?.SAVI?.toFixed(2) ?? '—'} color="#16803c" />
-          <IndexTile label="LST (°C)" value={selectedDistrict.indices?.LST_C?.toFixed(1) ?? '—'} color="#dc2626" />
-          <IndexTile label="Soil Moisture" value={selectedDistrict.indices?.Soil_Moisture?.toFixed(3) ?? '—'} color="#0ea5e9" />
-          <IndexTile label="NDVI Anomaly" value={`${selectedDistrict.indices?.NDVI_Anomaly_pct?.toFixed(1) ?? '—'}%`} color={(selectedDistrict.indices?.NDVI_Anomaly_pct ?? 0) < 0 ? '#dc2626' : '#16803c'} />
-        </div>
-      )}
-
-      {selectedWard && (
-        <div style={{ padding: '16px', background: 'rgba(255,255,255,0.30)', borderRadius: '16px', marginBottom: '20px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', color: '#0f3d20' }}>📍 Ward selected</h3>
-          <p style={{ marginTop: '6px', fontSize: '14px' }}>
-            {selectedWard.properties?.WARD || selectedWard.properties?.ADM3_NAME || selectedWard.properties?.WARD_NAME || 'Ward'}
-          </p>
-        </div>
-      )}
 
       <div style={{ marginBottom: '16px' }}>
         <DroughtMonitor onStatusChange={(s: string) => setRainfallStatus(s)} />
@@ -257,7 +171,8 @@ function DroughtTab({ language }: { language: Language }) {
 function PredictionsTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_predictions_title')} subtitle={t(language, 'tab_predictions_sub')} />
+      <SectionHeading title={t(language, 'tab_predictions_title')} subtitle="Random Forest predictions of crop yield" />
+      <LocationPicker />
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '16px' }}>
         <GlowWrapper><ChartSection /></GlowWrapper>
         <GlowWrapper><PredictionCard /></GlowWrapper>
@@ -269,7 +184,7 @@ function PredictionsTab({ language }: { language: Language }) {
 function ChartsTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_charts_title')} subtitle={t(language, 'tab_charts_sub')} />
+      <SectionHeading title={t(language, 'tab_charts_title')} subtitle="Visual analysis of maize yield, crop distribution, and frequency" />
       <Charts />
     </>
   )
@@ -278,7 +193,7 @@ function ChartsTab({ language }: { language: Language }) {
 function MarketTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_market_title')} subtitle={t(language, 'tab_market_sub')} />
+      <SectionHeading title={t(language, 'tab_market_title')} subtitle="Producer prices and wholesale market rates across Zimbabwe" />
       <Market />
     </>
   )
@@ -290,7 +205,7 @@ function LearnTab({ language }: { language: Language }) {
 
   return (
     <>
-      <SectionHeading title={t(language, 'tab_learn_title')} subtitle={t(language, 'tab_learn_sub')} />
+      <SectionHeading title={t(language, 'tab_learn_title')} subtitle="Crop education, pest help, disease identification, and best practices" />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
         {learnCategories.map((c) => {
           const isActive = category === c.key
@@ -322,7 +237,7 @@ function LearnTab({ language }: { language: Language }) {
 function HelpTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_help_title')} subtitle={t(language, 'tab_help_sub')} />
+      <SectionHeading title={t(language, 'tab_help_title')} subtitle="Get support, ask questions, or contact a consultant" />
       <div style={{ ...cardStyle, maxWidth: '640px' }}>
         <h3 style={{ fontSize: '16px', color: '#0f172a', margin: 0, fontWeight: 700 }}>Need help with your farm?</h3>
         <p style={{ fontSize: '14px', color: '#1f2937', lineHeight: 1.7, marginTop: '10px' }}>Our agriculture consultants can help you with:</p>
@@ -341,7 +256,7 @@ function HelpTab({ language }: { language: Language }) {
 function SubscribeTab({ language }: { language: Language }) {
   return (
     <>
-      <SectionHeading title={t(language, 'tab_subscribe_title')} subtitle={t(language, 'tab_subscribe_sub')} />
+      <SectionHeading title={t(language, 'tab_subscribe_title')} subtitle="Choose a plan and pay with EcoCash, Mukuru, InnBucks, or Bank Transfer" />
       <Subscription />
     </>
   )
