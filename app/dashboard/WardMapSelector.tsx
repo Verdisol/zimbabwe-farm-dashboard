@@ -43,6 +43,31 @@ const WARD_DISTRICT_FIELDS = [
   'PARENT', 'parent', 'DIST_NAME', 'District',
 ]
 
+// Try all these filenames in order
+const DISTRICT_FILE_CANDIDATES = [
+  '/data/districts.json',
+  '/data/districts.geojson',
+  '/data/Districts.json',
+  '/data/district.json',
+  '/data/ZIM_Drought_Master_Final.geojson',
+]
+
+async function loadFirstAvailableDistrict(): Promise<any> {
+  for (const url of DISTRICT_FILE_CANDIDATES) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        console.log('✅ Loaded districts from:', url, '→', data.features?.length, 'features')
+        return data
+      }
+    } catch {
+      // Try next
+    }
+  }
+  throw new Error('No district file found')
+}
+
 export default function WardMapSelector({
   onDistrictSelect,
   onWardSelect,
@@ -59,9 +84,7 @@ export default function WardMapSelector({
   const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
   useEffect(() => {
-    // Correct path: districts.geojson
-    fetch('/data/districts.geojson')
-      .then((r) => r.json())
+    loadFirstAvailableDistrict()
       .then((data) => {
         setDistrictGeo(data)
         const rawNames = (data.features || []).map((f: any) =>
@@ -74,9 +97,8 @@ export default function WardMapSelector({
         const unique: string[] = Array.from(new Set(names))
         unique.sort()
         setDistrictNames(unique)
-        console.log('✅ Loaded', data.features?.length, 'districts')
       })
-      .catch(() => console.log('❌ districts.geojson not found'))
+      .catch((err) => console.error('❌ District loading failed:', err.message))
 
     fetch('/data/zimwards.geojson')
       .then((r) => r.json())
