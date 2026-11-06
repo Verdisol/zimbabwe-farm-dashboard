@@ -43,31 +43,6 @@ const WARD_DISTRICT_FIELDS = [
   'PARENT', 'parent', 'DIST_NAME', 'District',
 ]
 
-// Try all these filenames in order
-const DISTRICT_FILE_CANDIDATES = [
-  '/data/districts.json',
-  '/data/districts.geojson',
-  '/data/Districts.json',
-  '/data/district.json',
-  '/data/ZIM_Drought_Master_Final.geojson',
-]
-
-async function loadFirstAvailableDistrict(): Promise<any> {
-  for (const url of DISTRICT_FILE_CANDIDATES) {
-    try {
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        console.log('✅ Loaded districts from:', url, '→', data.features?.length, 'features')
-        return data
-      }
-    } catch {
-      // Try next
-    }
-  }
-  throw new Error('No district file found')
-}
-
 export default function WardMapSelector({
   onDistrictSelect,
   onWardSelect,
@@ -84,7 +59,12 @@ export default function WardMapSelector({
   const [zoomBounds, setZoomBounds] = useState<L.LatLngBounds | null>(null)
 
   useEffect(() => {
-    loadFirstAvailableDistrict()
+    // 1. Load districts.json
+    fetch('/data/districts.json')
+      .then((r) => {
+        if (!r.ok) throw new Error('Districts file not found')
+        return r.json()
+      })
       .then((data) => {
         setDistrictGeo(data)
         const rawNames = (data.features || []).map((f: any) =>
@@ -97,17 +77,20 @@ export default function WardMapSelector({
         const unique: string[] = Array.from(new Set(names))
         unique.sort()
         setDistrictNames(unique)
+        console.log('✅ Loaded districts:', data.features?.length)
       })
-      .catch((err) => console.error('❌ District loading failed:', err.message))
+      .catch((err) => console.log('❌ districts.json failed:', err.message))
 
+    // 2. Load wards
     fetch('/data/zimwards.geojson')
       .then((r) => r.json())
       .then((data) => {
         setWardGeo(data)
-        console.log('✅ Loaded', data.features?.length, 'wards')
+        console.log('✅ Loaded wards:', data.features?.length)
       })
       .catch(() => console.log('❌ zimwards.geojson not found'))
 
+    // 3. Load drought lookup
     fetch('/data/ZIM_Drought_Master_Final.geojson')
       .then((r) => r.json())
       .then((data) => {
@@ -162,7 +145,7 @@ export default function WardMapSelector({
           color: '#334155',
         }}
       >
-        Loading district data...
+        Loading district data... (If this takes more than 10 seconds, the file is too large. Simplify it with Mapshaper)
       </div>
     )
   }
