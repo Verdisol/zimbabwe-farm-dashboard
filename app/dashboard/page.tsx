@@ -1,9 +1,9 @@
-export const dynamic = 'force-dynamic'
-
 'use client'
 
 import { useEffect, useState } from 'react'
-import Sidebar, { TabKey } from './Sidebar'
+import type { CSSProperties, ReactNode } from 'react'
+import Sidebar from './Sidebar'
+import type { TabKey } from './Sidebar'
 import TopBar from './TopBar'
 import MapView from './MapView'
 import WeatherCard from './WeatherCard'
@@ -19,11 +19,13 @@ import CropAdvisor from './CropAdvisor'
 import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import DiseaseScanner from './DiseaseScanner'
-import { learnItems, learnCategories, LearnCategory } from './learnData'
-import { Language, getSavedLanguage, t } from './translations'
+import { learnItems, learnCategories } from './learnData'
+import type { LearnCategory } from './learnData'
+import { getSavedLanguage, t } from './translations'
+import type { Language } from './translations'
 import { Toaster } from 'sonner'
 
-const cardStyle: React.CSSProperties = {
+const cardStyle: CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
   backdropFilter: 'blur(10px)',
   WebkitBackdropFilter: 'blur(10px)',
@@ -158,7 +160,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
   )
 }
 
-function GlowWrapper({ children }: { children: React.ReactNode }) {
+function GlowWrapper({ children }: { children: ReactNode }) {
   return (
     <div
       style={{
