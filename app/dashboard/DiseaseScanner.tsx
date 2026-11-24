@@ -84,7 +84,6 @@ export default function DiseaseScanner() {
 
   return (
     <div style={{ 
-      // UPDATED TO tractor-bg.png HERE
       backgroundImage: 'linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url(/tractor-bg.png)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
