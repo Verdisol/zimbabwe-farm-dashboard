@@ -1,12 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import {
-  Language,
-  getSavedLanguage,
-  t,
-} from './translations'
-
 export type TabKey =
   | 'overview'
   | 'map'
@@ -15,21 +8,23 @@ export type TabKey =
   | 'predictions'
   | 'charts'
   | 'market'
+  | 'diagnose'
   | 'learn'
   | 'help'
   | 'subscribe'
 
-const navItems: { key: TabKey; labelKey: string }[] = [
-  { key: 'overview', labelKey: 'nav_overview' },
-  { key: 'map', labelKey: 'nav_map' },
-  { key: 'weather', labelKey: 'nav_weather' },
-  { key: 'drought', labelKey: 'nav_drought' },
-  { key: 'predictions', labelKey: 'nav_predictions' },
-  { key: 'charts', labelKey: 'nav_charts' },
-  { key: 'market', labelKey: 'nav_market' },
-  { key: 'learn', labelKey: 'nav_learn' },
-  { key: 'help', labelKey: 'nav_help' },
-  { key: 'subscribe', labelKey: 'nav_subscribe' },
+const navItems: { key: TabKey; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'map', label: 'Map' },
+  { key: 'weather', label: 'Weather' },
+  { key: 'drought', label: 'Drought Monitor' },
+  { key: 'predictions', label: 'Predictions' },
+  { key: 'charts', label: 'Charts' },
+  { key: 'market', label: 'Market' },
+  { key: 'diagnose', label: 'Disease Scanner' },
+  { key: 'learn', label: 'Learn' },
+  { key: 'help', label: 'Help' },
+  { key: 'subscribe', label: 'Subscription' },
 ]
 
 export default function Sidebar({
@@ -39,20 +34,6 @@ export default function Sidebar({
   activeTab: TabKey
   onChangeTab: (tab: TabKey) => void
 }) {
-  const [language, setLanguage] = useState<Language>('en')
-
-  useEffect(() => {
-    setLanguage(getSavedLanguage())
-
-    const onLanguageChange = () => setLanguage(getSavedLanguage())
-    window.addEventListener('languageChanged', onLanguageChange)
-    window.addEventListener('storage', onLanguageChange)
-    return () => {
-      window.removeEventListener('languageChanged', onLanguageChange)
-      window.removeEventListener('storage', onLanguageChange)
-    }
-  }, [])
-
   return (
     <aside
       style={{
@@ -80,7 +61,7 @@ export default function Sidebar({
             letterSpacing: '0.3px',
           }}
         >
-          {t(language, 'sidebar_title')}
+          Farm Dashboard
         </h2>
         <p
           style={{
@@ -90,7 +71,7 @@ export default function Sidebar({
             textShadow: '0 1px 4px rgba(0,0,0,0.6)',
           }}
         >
-          {t(language, 'sidebar_subtitle')}
+          Zimbabwe
         </p>
       </div>
 
@@ -134,7 +115,7 @@ export default function Sidebar({
                 }
               }}
             >
-              {t(language, item.labelKey)}
+              {item.label}
             </button>
           )
         })}
@@ -157,7 +138,7 @@ export default function Sidebar({
           textShadow: '0 1px 4px rgba(0,0,0,0.6)',
         }}
       >
-        {t(language, 'nav_logout')}
+        Log out
       </button>
     </aside>
   )
