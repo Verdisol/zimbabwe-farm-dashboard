@@ -1,11 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
-import Sidebar from './Sidebar'
-import type { TabKey } from './Sidebar'
+import dynamic from 'next/dynamic'
+import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
-import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
 import ChartSection from './ChartSection'
@@ -14,18 +12,29 @@ import Market from './Market'
 import Subscription from './Subscription'
 import Charts from './Charts'
 import StatCards from './StatCards'
-import LocationPicker from './LocationPicker'
 import CropAdvisor from './CropAdvisor'
-import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import DiseaseScanner from './DiseaseScanner'
-import { learnItems, learnCategories } from './learnData'
-import type { LearnCategory } from './learnData'
-import { getSavedLanguage, t } from './translations'
-import type { Language } from './translations'
+import { learnItems, learnCategories, LearnCategory } from './learnData'
+import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-const cardStyle: CSSProperties = {
+const MapView = dynamic(() => import('./MapView'), {
+  ssr: false,
+  loading: () => <div style={{ padding: '20px' }}>Loading map...</div>,
+})
+
+const LocationPicker = dynamic(() => import('./LocationPicker'), {
+  ssr: false,
+  loading: () => <div style={{ padding: '12px' }}>Loading location selector...</div>,
+})
+
+const DroughtMap = dynamic(() => import('./DroughtMap'), {
+  ssr: false,
+  loading: () => <div style={{ padding: '20px' }}>Loading drought map...</div>,
+})
+
+const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
   backdropFilter: 'blur(10px)',
   WebkitBackdropFilter: 'blur(10px)',
@@ -160,7 +169,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
   )
 }
 
-function GlowWrapper({ children }: { children: ReactNode }) {
+function GlowWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
