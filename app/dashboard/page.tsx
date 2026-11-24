@@ -45,10 +45,10 @@ export default function DashboardPage() {
     window.addEventListener('languageChanged', onLanguageChange)
     window.addEventListener('storage', onLanguageChange)
 
-    // FORCE VIDEO TO PLAY (Fixes browser autoplay blocks)
+    // FORCE VIDEO TO PLAY
     if (videoRef.current) {
       videoRef.current.play().catch((err) => {
-        console.log("Video auto-play blocked by browser.", err)
+        console.log("Video auto-play blocked. Showing poster image instead.", err)
       })
     }
 
@@ -65,15 +65,17 @@ export default function DashboardPage() {
         height: '100vh',
         overflow: 'hidden',
         position: 'relative',
+        backgroundColor: '#1a1a1a', // Fallback dark background
       }}
     >
-      {/* 1. THE VIDEO BACKGROUND (Using a CDN URL to bypass GitHub size limits) */}
+      {/* 1. THE VIDEO BACKGROUND */}
       <video
         ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
+        poster="/tractor-bg.png" // 🛑 FALLBACK: If video fails, show the tractor image
         style={{
           position: 'absolute',
           top: 0,
@@ -84,8 +86,8 @@ export default function DashboardPage() {
           zIndex: -2,
         }}
       >
-        {/* THIS IS THE NEW DIRECT VIDEO LINK */}
-        <source src="https://cdn.pixabay.com/video/2023/10/13/184789-873183442_large.mp4" type="video/mp4" />
+        {/* 🛑 NEW RELIABLE CDN LINK: Green field video */}
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-green-wheat-field-in-the-wind-1181-large.mp4" type="video/mp4" />
       </video>
 
       {/* 2. THE WHITE OVERLAY (25% opacity) */}
