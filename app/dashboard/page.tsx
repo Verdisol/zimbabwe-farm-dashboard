@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
@@ -19,7 +19,6 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-// Dynamically import maps to prevent "window is not defined" build errors
 const MapView = dynamic(() => import('./MapView'), { ssr: false })
 const DroughtMap = dynamic(() => import('./DroughtMap'), { ssr: false })
 const LocationPicker = dynamic(() => import('./LocationPicker'), { ssr: false })
@@ -38,12 +37,21 @@ const cardStyle: React.CSSProperties = {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [language, setLanguage] = useState<Language>('en')
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     setLanguage(getSavedLanguage())
     const onLanguageChange = () => setLanguage(getSavedLanguage())
     window.addEventListener('languageChanged', onLanguageChange)
     window.addEventListener('storage', onLanguageChange)
+
+    // FORCE VIDEO TO PLAY (Fixes browser autoplay blocks)
+    if (videoRef.current) {
+      videoRef.current.play().catch((err) => {
+        console.log("Video auto-play blocked by browser.", err)
+      })
+    }
+
     return () => {
       window.removeEventListener('languageChanged', onLanguageChange)
       window.removeEventListener('storage', onLanguageChange)
@@ -59,8 +67,9 @@ export default function DashboardPage() {
         position: 'relative',
       }}
     >
-      {/* 1. THE VIDEO BACKGROUND */}
+      {/* 1. THE VIDEO BACKGROUND (Using a CDN URL to bypass GitHub size limits) */}
       <video
+        ref={videoRef}
         autoPlay
         loop
         muted
@@ -75,10 +84,11 @@ export default function DashboardPage() {
           zIndex: -2,
         }}
       >
-        <source src="/background-video.mp4" type="video/mp4" />
+        {/* THIS IS THE NEW DIRECT VIDEO LINK */}
+        <source src="https://cdn.pixabay.com/video/2023/10/13/184789-873183442_large.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. THE WHITE OVERLAY (REDUCED TO 0.25 FOR TRANSPARENCY) */}
+      {/* 2. THE WHITE OVERLAY (25% opacity) */}
       <div
         style={{
           position: 'absolute',
