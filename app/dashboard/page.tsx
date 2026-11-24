@@ -67,6 +67,8 @@ export default function DashboardPage() {
         height: '100vh',
         overflow: 'hidden',
         position: 'relative',
+        isolation: 'isolate',
+        backgroundColor: '#eaf3ec',
       }}
     >
       {/* 1. THE VIDEO BACKGROUND */}
@@ -77,12 +79,12 @@ export default function DashboardPage() {
         playsInline
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
+          inset: 0,
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          zIndex: -2,
+          zIndex: 0,
+          pointerEvents: 'none',
         }}
       >
         <source src="/background-video.mp4" type="video/mp4" />
@@ -92,17 +94,17 @@ export default function DashboardPage() {
       <div
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
+          inset: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(255, 255, 255, 0.55)', 
-          zIndex: -1,
+          backgroundColor: 'rgba(255, 255, 255, 0.55)',
+          zIndex: 1,
+          pointerEvents: 'none',
         }}
       />
 
       {/* 3. DASHBOARD CONTENT */}
-      <div style={{ flexShrink: 0, zIndex: 10 }}>
+      <div style={{ flexShrink: 0, zIndex: 2 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
 
@@ -114,7 +116,7 @@ export default function DashboardPage() {
           minWidth: 0,
           height: '100vh',
           overflowY: 'auto',
-          zIndex: 10,
+          zIndex: 2,
         }}
       >
         <TopBar />
