@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -19,20 +21,10 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-const MapView = dynamic(() => import('./MapView'), {
-  ssr: false,
-  loading: () => <div style={{ padding: '20px' }}>Loading map...</div>,
-})
-
-const LocationPicker = dynamic(() => import('./LocationPicker'), {
-  ssr: false,
-  loading: () => <div style={{ padding: '12px' }}>Loading location selector...</div>,
-})
-
-const DroughtMap = dynamic(() => import('./DroughtMap'), {
-  ssr: false,
-  loading: () => <div style={{ padding: '20px' }}>Loading drought map...</div>,
-})
+// 🛑 THE FIX: We dynamically import the map components with ssr: false
+const MapView = dynamic(() => import('./MapView'), { ssr: false })
+const DroughtMap = dynamic(() => import('./DroughtMap'), { ssr: false })
+const LocationPicker = dynamic(() => import('./LocationPicker'), { ssr: false })
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -67,8 +59,6 @@ export default function DashboardPage() {
         height: '100vh',
         overflow: 'hidden',
         position: 'relative',
-        isolation: 'isolate',
-        backgroundColor: '#eaf3ec',
       }}
     >
       {/* 1. THE VIDEO BACKGROUND */}
@@ -79,32 +69,32 @@ export default function DashboardPage() {
         playsInline
         style={{
           position: 'absolute',
-          inset: 0,
+          top: 0,
+          left: 0,
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          zIndex: 0,
-          pointerEvents: 'none',
+          zIndex: -2,
         }}
       >
         <source src="/background-video.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. THE WHITE OVERLAY (Keeps text readable) */}
+      {/* 2. THE WHITE OVERLAY (REDUCED TO 0.25 FOR TRANSPARENCY) */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
+          top: 0,
+          left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(255, 255, 255, 0.55)',
-          zIndex: 1,
-          pointerEvents: 'none',
+          backgroundColor: 'rgba(255, 255, 255, 0.25)', 
+          zIndex: -1,
         }}
       />
 
       {/* 3. DASHBOARD CONTENT */}
-      <div style={{ flexShrink: 0, zIndex: 2 }}>
+      <div style={{ flexShrink: 0, zIndex: 10 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
 
@@ -116,7 +106,7 @@ export default function DashboardPage() {
           minWidth: 0,
           height: '100vh',
           overflowY: 'auto',
-          zIndex: 2,
+          zIndex: 10,
         }}
       >
         <TopBar />
@@ -152,7 +142,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
           fontWeight: 700,
           color: '#0f172a',
           margin: 0,
-          textShadow: '0 1px 4px rgba(255,255,255,0.6)',
+          textShadow: '0 1px 4px rgba(255,255,255,0.8)',
         }}
       >
         {title}
@@ -162,7 +152,7 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle: string }
           fontSize: '14px',
           color: '#334155',
           margin: '4px 0 0 0',
-          textShadow: '0 1px 3px rgba(255,255,255,0.6)',
+          textShadow: '0 1px 3px rgba(255,255,255,0.8)',
         }}
       >
         {subtitle}
