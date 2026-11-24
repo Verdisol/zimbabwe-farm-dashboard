@@ -9,11 +9,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No image uploaded' }, { status: 400 })
     }
 
-    // Convert image to base64
     const buffer = Buffer.from(await imageFile.arrayBuffer())
     const base64Image = buffer.toString('base64')
 
-    // Call Plant.id v3 API
     const response = await fetch('https://plant.id/api/v3/identification', {
       method: 'POST',
       headers: {
@@ -23,24 +21,29 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         images: [base64Image],
         health: 'all', 
-        similar_images: true,
       }),
     })
 
     const data = await response.json()
 
     if (!response.ok) {
-      const errorMsg = data.message || data.error || 'Plant.id API failed'
-      throw new Error(errorMsg)
+      throw new Error(data.message || 'Plant.id API failed')
     }
 
-    // Parse v3 Response
-    const isHealthy = data.result?.is_healthy?.binary ?? false
+    // --- Improved Parsing Logic ---
     const diseaseSuggestions = data.result?.disease?.suggestions || []
-    const topDisease = diseaseSuggestions.length > 0 ? diseaseSuggestions[0] : null
-
-    const treatment = topDisease?.details?.treatment || {}
-    const treatmentText = treatment.biological || treatment.chemical || treatment.prevention || 'Consult an agronomist.'
+    
+    // Find the first disease with a probability > 10% to filter out noise
+    const topDisease = diseaseSuggestions.find((d: any) => d.probability > 0.1)
+    
+    // If we found a disease, we override the "healthy" status
+    const isHealthy = !topDisease 
+    
+    let treatmentText = 'Consult an agronomist for treatment options.'
+    if (topDisease && topDisease.details?.treatment) {
+      const t = topDisease.details.treatment
+      treatmentText = t.biological || t.chemical || t.prevention || treatmentText
+    }
 
     return NextResponse.json({
       success: true,
@@ -48,7 +51,7 @@ export async function POST(request: Request) {
       disease_name: topDisease?.name || 'Unknown',
       probability: topDisease?.probability || 0,
       treatment: treatmentText,
-      description: topDisease?.details?.description || ''
+      description: topDisease?.details?.description || 'No specific description available.'
     })
 
   } catch (error: any) {
