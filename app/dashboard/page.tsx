@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
@@ -37,7 +37,6 @@ const cardStyle: React.CSSProperties = {
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [language, setLanguage] = useState<Language>('en')
-  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     setLanguage(getSavedLanguage())
@@ -45,12 +44,6 @@ export default function DashboardPage() {
     window.addEventListener('languageChanged', onLanguageChange)
     window.addEventListener('storage', onLanguageChange)
 
-    // Force Video Play
-    if (videoRef.current) {
-      videoRef.current.play().catch((err) => {
-        console.log("Video auto-play blocked.", err)
-      })
-    }
 
     return () => {
       window.removeEventListener('languageChanged', onLanguageChange)
@@ -65,30 +58,24 @@ export default function DashboardPage() {
         height: '100vh',
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#111827', // Dark fallback just in case
+        backgroundColor: '#111827',
+        isolation: 'isolate',
       }}
     >
-      {/* 1. THE VIDEO BACKGROUND (zIndex: 0) */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        poster="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop" // Remote fallback image
+      {/* 1. STATIC IMAGE BACKGROUND: public/background.webp */}
+      <div
+        aria-hidden="true"
         style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: 0, // Changed from -2 to 0
+          inset: 0,
+          backgroundImage: "url('/background.webp')",
+          backgroundPosition: 'center',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 0,
+          pointerEvents: 'none',
         }}
-      >
-        {/* 🛑 NEW RELIABLE CDN LINK */}
-        <source src="https://cdn.coverr.co/videos/coverr-a-field-of-wheat-1573/1080p.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* 2. THE WHITE OVERLAY (zIndex: 1) */}
       <div
@@ -98,7 +85,7 @@ export default function DashboardPage() {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(255, 255, 255, 0.40)', // 40% white overlay
+          backgroundColor: 'rgba(255, 255, 255, 0.18)', // Keep the background image visible
           zIndex: 1, // Changed from -1 to 1
         }}
       />
