@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>('en')
 
   useEffect(() => {
+    // This safely runs only on the client browser
     setLanguage(getSavedLanguage())
     const onLanguageChange = () => setLanguage(getSavedLanguage())
     window.addEventListener('languageChanged', onLanguageChange)
