@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic' // <-- ADDED THIS IMPORT
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
+import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
 import ChartSection from './ChartSection'
@@ -14,22 +14,12 @@ import Charts from './Charts'
 import StatCards from './StatCards'
 import LocationPicker from './LocationPicker'
 import CropAdvisor from './CropAdvisor'
+import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import DiseaseScanner from './DiseaseScanner'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
-
-// DYNAMIC IMPORTS TO FIX SSR WINDOW ERROR
-const MapView = dynamic(() => import('./MapView'), { 
-  ssr: false, 
-  loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading map...</div> 
-})
-
-const DroughtMap = dynamic(() => import('./DroughtMap'), { 
-  ssr: false, 
-  loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading satellite map...</div> 
-})
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -63,15 +53,43 @@ export default function DashboardPage() {
         display: 'flex',
         height: '100vh',
         overflow: 'hidden',
-        backgroundImage:
-          'linear-gradient(rgba(255,255,255,0.55), rgba(255,255,255,0.55)), url(/images/background.jpeg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
+        position: 'relative',
       }}
     >
-      <div style={{ flexShrink: 0 }}>
+      {/* 1. THE VIDEO BACKGROUND */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: -2,
+        }}
+      >
+        <source src="/background-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* 2. THE WHITE OVERLAY (Keeps text readable) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.55)', 
+          zIndex: -1,
+        }}
+      />
+
+      {/* 3. DASHBOARD CONTENT */}
+      <div style={{ flexShrink: 0, zIndex: 10 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
 
@@ -83,6 +101,7 @@ export default function DashboardPage() {
           minWidth: 0,
           height: '100vh',
           overflowY: 'auto',
+          zIndex: 10,
         }}
       >
         <TopBar />
