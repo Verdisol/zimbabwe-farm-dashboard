@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic' // <-- ADDED THIS IMPORT
 import Sidebar, { TabKey } from './Sidebar'
 import TopBar from './TopBar'
-import MapView from './MapView'
 import WeatherCard from './WeatherCard'
 import DroughtMonitor from './DroughtMonitor'
 import ChartSection from './ChartSection'
@@ -14,12 +14,22 @@ import Charts from './Charts'
 import StatCards from './StatCards'
 import LocationPicker from './LocationPicker'
 import CropAdvisor from './CropAdvisor'
-import DroughtMap from './DroughtMap'
 import DroughtAlert from './DroughtAlert'
 import DiseaseScanner from './DiseaseScanner'
 import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
+
+// DYNAMIC IMPORTS TO FIX SSR WINDOW ERROR
+const MapView = dynamic(() => import('./MapView'), { 
+  ssr: false, 
+  loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading map...</div> 
+})
+
+const DroughtMap = dynamic(() => import('./DroughtMap'), { 
+  ssr: false, 
+  loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading satellite map...</div> 
+})
 
 const cardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.20)',
@@ -37,7 +47,6 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>('en')
 
   useEffect(() => {
-    // This safely runs only on the client browser
     setLanguage(getSavedLanguage())
     const onLanguageChange = () => setLanguage(getSavedLanguage())
     window.addEventListener('languageChanged', onLanguageChange)
