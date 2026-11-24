@@ -83,13 +83,21 @@ export default function DiseaseScanner() {
   }
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(10px)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(0,255,136,0.20)' }}>
+    <div style={{ 
+      backgroundImage: 'linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url(/tractor-bg.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      borderRadius: '16px', 
+      padding: '24px', 
+      border: '1px solid rgba(0,255,136,0.20)',
+      boxShadow: '0 0 15px rgba(0,255,136,0.18)'
+    }}>
       <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', color: '#0f3d20' }}>📸 AI Crop Disease Scanner</h2>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px' }}>
         
         <div>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>Select Crop</label>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: '#1f2937' }}>Select Crop</label>
           <select value={cropType} onChange={(e) => setCropType(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}>
             <option>Maize</option>
             <option>Tomatoes</option>
@@ -99,7 +107,7 @@ export default function DiseaseScanner() {
           </select>
         </div>
 
-        <div style={{ border: '2px dashed #16803c', borderRadius: '12px', padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.5)' }}>
+        <div style={{ border: '2px dashed #16803c', borderRadius: '12px', padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.8)' }}>
           <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} id="file-upload" />
           <label htmlFor="file-upload" style={{ cursor: 'pointer', fontWeight: 600, color: '#16803c' }}>
             Tap to take a photo or upload
@@ -112,7 +120,7 @@ export default function DiseaseScanner() {
         </button>
 
         {result && (
-          <div style={{ background: 'rgba(255,248,225,0.8)', padding: '20px', borderRadius: '12px', border: '1px solid #f59e0b' }}>
+          <div style={{ background: 'rgba(255,248,225,0.95)', padding: '20px', borderRadius: '12px', border: '1px solid #f59e0b' }}>
             <h3 style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>
               {result.is_healthy ? '✅ Healthy Plant Detected' : `⚠️ Detected: ${result.disease_name}`}
             </h3>
