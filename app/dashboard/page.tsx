@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic'
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -21,7 +19,7 @@ import { learnItems, learnCategories, LearnCategory } from './learnData'
 import { Language, getSavedLanguage, t } from './translations'
 import { Toaster } from 'sonner'
 
-// 🛑 THE FIX: We dynamically import the map components with ssr: false
+// Dynamically import maps to prevent "window is not defined" build errors
 const MapView = dynamic(() => import('./MapView'), { ssr: false })
 const DroughtMap = dynamic(() => import('./DroughtMap'), { ssr: false })
 const LocationPicker = dynamic(() => import('./LocationPicker'), { ssr: false })
