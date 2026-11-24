@@ -45,10 +45,10 @@ export default function DashboardPage() {
     window.addEventListener('languageChanged', onLanguageChange)
     window.addEventListener('storage', onLanguageChange)
 
-    // FORCE VIDEO TO PLAY
+    // Force Video Play
     if (videoRef.current) {
       videoRef.current.play().catch((err) => {
-        console.log("Video auto-play blocked. Showing poster image instead.", err)
+        console.log("Video auto-play blocked.", err)
       })
     }
 
@@ -65,17 +65,17 @@ export default function DashboardPage() {
         height: '100vh',
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: '#1a1a1a', // Fallback dark background
+        backgroundColor: '#111827', // Dark fallback just in case
       }}
     >
-      {/* 1. THE VIDEO BACKGROUND */}
+      {/* 1. THE VIDEO BACKGROUND (zIndex: 0) */}
       <video
         ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        poster="/tractor-bg.png" // 🛑 FALLBACK: If video fails, show the tractor image
+        poster="https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2000&auto=format&fit=crop" // Remote fallback image
         style={{
           position: 'absolute',
           top: 0,
@@ -83,14 +83,14 @@ export default function DashboardPage() {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          zIndex: -2,
+          zIndex: 0, // Changed from -2 to 0
         }}
       >
-        {/* 🛑 NEW RELIABLE CDN LINK: Green field video */}
-        <source src="https://assets.mixkit.co/videos/preview/mixkit-green-wheat-field-in-the-wind-1181-large.mp4" type="video/mp4" />
+        {/* 🛑 NEW RELIABLE CDN LINK */}
+        <source src="https://cdn.coverr.co/videos/coverr-a-field-of-wheat-1573/1080p.mp4" type="video/mp4" />
       </video>
 
-      {/* 2. THE WHITE OVERLAY (25% opacity) */}
+      {/* 2. THE WHITE OVERLAY (zIndex: 1) */}
       <div
         style={{
           position: 'absolute',
@@ -98,12 +98,12 @@ export default function DashboardPage() {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(255, 255, 255, 0.25)', 
-          zIndex: -1,
+          backgroundColor: 'rgba(255, 255, 255, 0.40)', // 40% white overlay
+          zIndex: 1, // Changed from -1 to 1
         }}
       />
 
-      {/* 3. DASHBOARD CONTENT */}
+      {/* 3. DASHBOARD CONTENT (zIndex: 10) */}
       <div style={{ flexShrink: 0, zIndex: 10 }}>
         <Sidebar activeTab={activeTab} onChangeTab={setActiveTab} />
       </div>
